@@ -1,106 +1,163 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:video_player/video_player.dart';
 
 import 'package:meals/models/meal.dart';
-import 'package:meals/providers/favorites_provider.dart';
 
-class MealDetailsScreen extends ConsumerWidget {
-  const MealDetailsScreen({
-    super.key,
-    required this.meal,
-  });
+class MealDetailsScreen extends StatefulWidget {
+  const MealDetailsScreen({super.key, required this.meal});
 
   final Meal meal;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final favoriteMeals = ref.watch(favoriteMealsProvider);
+  State<MealDetailsScreen> createState() => _MealDetailsScreenState();
+}
 
-    final isFavorite = favoriteMeals.contains(meal);
+class _MealDetailsScreenState extends State<MealDetailsScreen> {
+  late VideoPlayerController _videoController;
+  bool _isVideoReady = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _videoController = VideoPlayerController.networkUrl(
+      Uri.parse(widget.meal.videoUrl),
+    );
+
+    _videoController
+        .initialize()
+        .then((_) {
+          if (!mounted) return;
+
+          setState(() {
+            _isVideoReady = true;
+          });
+        })
+        .catchError((error) {
+          debugPrint('Video error: $error');
+
+          if (!mounted) return;
+
+          setState(() {
+            _isVideoReady = false;
+          });
+        });
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildSectionTitle(String text) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 14),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleLarge!.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoPlayer() {
+    if (_videoController.value.hasError) {
+      return SizedBox(
+        height: 250,
+        child: Center(
+          child: Text(
+            'Video failed to load.\n${_videoController.value.errorDescription ?? ''}',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    if (!_isVideoReady) {
+      return const SizedBox(
+        height: 250,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: _videoController.value.aspectRatio,
+          child: VideoPlayer(_videoController),
+        ),
+        IconButton(
+          iconSize: 64,
+          color: Colors.white,
+          icon: Icon(
+            _videoController.value.isPlaying
+                ? Icons.pause_circle
+                : Icons.play_circle,
+          ),
+          onPressed: () {
+            setState(() {
+              _videoController.value.isPlaying
+                  ? _videoController.pause()
+                  : _videoController.play();
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final meal = widget.meal;
 
     return Scaffold(
-        appBar: AppBar(title: Text(meal.title), actions: [
-          IconButton(
-            onPressed: () {
-              final wasAdded = ref
-                  .read(favoriteMealsProvider.notifier)
-                  .toggleMealFavoriteStatus(meal);
-              ScaffoldMessenger.of(context).clearSnackBars();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                      wasAdded ? 'Meal added as a favorite.' : 'Meal removed.'),
+      appBar: AppBar(title: Text(meal.title)),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            Hero(tag: meal.id, child: _buildVideoPlayer()),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                meal.description,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
-              );
-            },
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) {
-                return RotationTransition(
-                  turns: Tween<double>(begin: 0.8, end: 1).animate(animation),
-                  child: child,
-                );
-              },
-              child: Icon(
-                isFavorite ? Icons.star : Icons.star_border,
-                key: ValueKey(isFavorite),
               ),
             ),
-          )
-        ]),
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              Hero(
-                tag: meal.id,
-                child: Image.network(
-                  meal.imageUrl,
-                  height: 300,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+            _buildSectionTitle('Ingredients'),
+            for (final ingredient in meal.ingredients)
+              Text(
+                ingredient,
+                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
-              const SizedBox(height: 14),
-              Text(
-                'Ingredients',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 14),
-              for (final ingredient in meal.ingredients)
-                Text(
-                  ingredient,
+            const SizedBox(height: 24),
+            _buildSectionTitle('Steps'),
+            for (final step in meal.steps)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  step,
+                  textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-              const SizedBox(height: 24),
-              Text(
-                'Steps',
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
               ),
-              const SizedBox(height: 14),
-              for (final step in meal.steps)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  child: Text(
-                    step,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                  ),
-                ),
-            ],
-          ),
-        ));
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
   }
 }
