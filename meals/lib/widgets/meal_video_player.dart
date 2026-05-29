@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
 class MealVideoPlayer extends StatefulWidget {
-  const MealVideoPlayer({
-    super.key,
-    required this.videoUrl,
-  });
+  const MealVideoPlayer({super.key, required this.videoUrl});
 
   final String videoUrl;
 
@@ -72,18 +69,14 @@ class _MealVideoPlayerState extends State<MealVideoPlayer> {
     if (_isLoading) {
       return const AspectRatio(
         aspectRatio: 16 / 9,
-        child: Center(
-          child: CircularProgressIndicator(),
-        ),
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_errorMessage != null) {
       return AspectRatio(
         aspectRatio: 16 / 9,
-        child: Center(
-          child: Text(_errorMessage!),
-        ),
+        child: Center(child: Text(_errorMessage!)),
       );
     }
 

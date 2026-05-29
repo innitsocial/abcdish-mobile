@@ -9,10 +9,7 @@ import 'package:meals/widgets/category_grid_item.dart';
 import 'package:meals/widgets/meal_item.dart';
 
 class CategoriesScreen extends StatefulWidget {
-  const CategoriesScreen({
-    super.key,
-    required this.availableMeals,
-  });
+  const CategoriesScreen({super.key, required this.availableMeals});
 
   final List<Meal> availableMeals;
 
@@ -40,34 +37,34 @@ class _CategoriesScreenState extends State<CategoriesScreen>
   }
 
   List<Meal> get _filteredMeals {
-  final query = _searchQuery.trim().toLowerCase();
+    final query = _searchQuery.trim().toLowerCase();
 
-  if (query.isEmpty) {
-    return [];
-  }
+    if (query.isEmpty) {
+      return [];
+    }
 
-  return widget.availableMeals.where((meal) {
-    final titleMatch = meal.title.toLowerCase().contains(query);
+    return widget.availableMeals.where((meal) {
+      final titleMatch = meal.title.toLowerCase().contains(query);
 
-    final ingredientMatch = meal.ingredients.any(
-      (ingredient) => ingredient.toLowerCase().contains(query),
-    );
-
-    final categoryMatch = meal.categories.any((categoryId) {
-      final matchingCategories = availableCategories.where(
-        (category) => category.id == categoryId,
+      final ingredientMatch = meal.ingredients.any(
+        (ingredient) => ingredient.toLowerCase().contains(query),
       );
 
-      if (matchingCategories.isEmpty) {
-        return false;
-      }
+      final categoryMatch = meal.categories.any((categoryId) {
+        final matchingCategories = availableCategories.where(
+          (category) => category.id == categoryId,
+        );
 
-      return matchingCategories.first.title.toLowerCase().contains(query);
-    });
+        if (matchingCategories.isEmpty) {
+          return false;
+        }
 
-    return titleMatch || ingredientMatch || categoryMatch;
-  }).toList();
-}
+        return matchingCategories.first.title.toLowerCase().contains(query);
+      });
+
+      return titleMatch || ingredientMatch || categoryMatch;
+    }).toList();
+  }
 
   bool get _isSearching => _searchQuery.trim().isNotEmpty;
 
@@ -99,20 +96,16 @@ class _CategoriesScreenState extends State<CategoriesScreen>
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (ctx) => MealsScreen(
-          title: category.title,
-          meals: filteredMeals,
-        ),
+        builder: (ctx) =>
+            MealsScreen(title: category.title, meals: filteredMeals),
       ),
     );
   }
 
   void _selectMeal(BuildContext context, Meal meal) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (ctx) => MealDetailsScreen(meal: meal),
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (ctx) => MealDetailsScreen(meal: meal)));
   }
 
   void _clearSearch() {
@@ -164,15 +157,16 @@ class _CategoriesScreenState extends State<CategoriesScreen>
                   )
                 : _buildCategoryGrid(context, availableCategories),
             builder: (context, child) => SlideTransition(
-              position: Tween(
-                begin: const Offset(0, 0.3),
-                end: const Offset(0, 0),
-              ).animate(
-                CurvedAnimation(
-                  parent: _animationController,
-                  curve: Curves.easeInOut,
-                ),
-              ),
+              position:
+                  Tween(
+                    begin: const Offset(0, 0.3),
+                    end: const Offset(0, 0),
+                  ).animate(
+                    CurvedAnimation(
+                      parent: _animationController,
+                      curve: Curves.easeInOut,
+                    ),
+                  ),
               child: child,
             ),
           ),
@@ -181,10 +175,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
     );
   }
 
-  Widget _buildCategoryGrid(
-    BuildContext context,
-    List<Category> categories,
-  ) {
+  Widget _buildCategoryGrid(BuildContext context, List<Category> categories) {
     return GridView(
       padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -211,19 +202,14 @@ class _CategoriesScreenState extends State<CategoriesScreen>
     List<Meal> meals,
   ) {
     if (categories.isEmpty && meals.isEmpty) {
-      return const Center(
-        child: Text('No recipes or categories found.'),
-      );
+      return const Center(child: Text('No recipes or categories found.'));
     }
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         if (categories.isNotEmpty) ...[
-          Text(
-            'Categories',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('Categories', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           GridView(
             shrinkWrap: true,
@@ -247,10 +233,7 @@ class _CategoriesScreenState extends State<CategoriesScreen>
           const SizedBox(height: 24),
         ],
         if (meals.isNotEmpty) ...[
-          Text(
-            'Recipes',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
+          Text('Recipes', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final meal in meals)
             MealItem(

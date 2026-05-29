@@ -39,9 +39,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
 
     if (identifier == 'filters') {
       await Navigator.of(context).push<Map<Filter, bool>>(
-        MaterialPageRoute(
-          builder: (ctx) => const FiltersScreen(),
-        ),
+        MaterialPageRoute(builder: (ctx) => const FiltersScreen()),
       );
     }
   }
@@ -50,18 +48,14 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   Widget build(BuildContext context) {
     final availableMeals = ref.watch(filteredMealsProvider);
 
-    Widget activePage = CategoriesScreen(
-      availableMeals: availableMeals,
-    );
+    Widget activePage = CategoriesScreen(availableMeals: availableMeals);
 
     var activePageTitle = 'ABCDish';
 
     if (_selectedPageIndex == 1) {
       final favoriteMeals = ref.watch(favoriteMealsProvider);
 
-      activePage = MealsScreen(
-        meals: favoriteMeals,
-      );
+      activePage = MealsScreen(meals: favoriteMeals);
 
       activePageTitle = 'Your Favourites';
     }
@@ -72,12 +66,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(activePageTitle),
-      ),
-      drawer: MainDrawer(
-        onSelectScreen: _setScreen,
-      ),
+      appBar: AppBar(title: Text(activePageTitle)),
+      drawer: MainDrawer(onSelectScreen: _setScreen),
       body: activePage,
       bottomNavigationBar: BottomNavigationBar(
         onTap: _selectPage,
@@ -87,10 +77,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
             icon: Icon(Icons.restaurant_menu),
             label: 'Recipes',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star),
-            label: 'Favourites',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favourites'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
             label: 'Shopping',
