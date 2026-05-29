@@ -59,4 +59,31 @@ class Meal {
   final bool isVegetarian;
 
   final Color color;
+
+  factory Meal.fromJson(Map<String, dynamic> json) {
+    return Meal(
+      id: json['id'].toString(),
+      categories: List<String>.from(json['categories'] ?? []),
+      title: json['title'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
+      videoUrl: json['videoUrl'] ?? '',
+      description: json['description'] ?? '',
+      ingredients: List<String>.from(json['ingredients'] ?? []),
+      steps: List<String>.from(json['steps'] ?? []),
+      duration: json['duration'] ?? 0,
+      complexity: Complexity.values.firstWhere(
+        (value) => value.name == json['complexity'],
+        orElse: () => Complexity.simple,
+      ),
+      affordability: Affordability.values.firstWhere(
+        (value) => value.name == json['affordability'],
+        orElse: () => Affordability.affordable,
+      ),
+      isGlutenFree: json['glutenFree'] ?? false,
+      isLactoseFree: json['lactoseFree'] ?? false,
+      isVegan: json['vegan'] ?? false,
+      isVegetarian: json['vegetarian'] ?? false,
+      color: Colors.orange,
+    );
+  }
 }

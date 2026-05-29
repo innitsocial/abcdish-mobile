@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:abcdish/data/dummy_data.dart';
+import 'package:abcdish/models/category.dart';
 import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/providers/categories_provider.dart';
 import 'package:abcdish/screens/meal_details.dart';
 import 'package:abcdish/widgets/meal_horizontal_card.dart';
 import 'package:abcdish/widgets/section_header.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key, required this.availableMeals});
 
   final List<Meal> availableMeals;
@@ -17,62 +19,53 @@ class HomeScreen extends StatelessWidget {
     ).push(MaterialPageRoute(builder: (ctx) => MealDetailsScreen(meal: meal)));
   }
 
-  List<Meal> _mealsForCategory(String categoryId) {
-    return availableMeals.where((meal) {
-      return meal.categories.contains(categoryId);
-    }).toList();
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final categoriesAsync = ref.watch(categoriesProvider);
+
+    return categoriesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) =>
+          Center(child: Text('Failed to load categories: $error')),
+      data: (categories) {
+        final featuredMeal = availableMeals.first;
+
+        return ListView(
+          children: [
+            _FeaturedRecipe(
+              meal: featuredMeal,
+              onSelectMeal: () {
+                _selectMeal(context, featuredMeal);
+              },
+            ),
+            _MealSection(
+              title: 'Popular Recipes',
+              subtitle: 'Start cooking something delicious today',
+              meals: availableMeals,
+              onSelectMeal: (meal) {
+                _selectMeal(context, meal);
+              },
+            ),
+            for (final category in categories)
+              _MealSection(
+                title: category.title,
+                subtitle: 'Explore ${category.title} recipes',
+                meals: _mealsForCategory(availableMeals, category),
+                onSelectMeal: (meal) {
+                  _selectMeal(context, meal);
+                },
+              ),
+            const SizedBox(height: 24),
+          ],
+        );
+      },
+    );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final featuredMeal = availableMeals.isNotEmpty
-        ? availableMeals.first
-        : dummyMeals.first;
-
-    final indianMeals = _mealsForCategory('c1');
-    final quickMeals = _mealsForCategory('c3');
-    final breakfastMeals = _mealsForCategory('c4');
-    final healthyMeals = _mealsForCategory('c5');
-
-    return ListView(
-      children: [
-        _FeaturedRecipe(
-          meal: featuredMeal,
-          onSelectMeal: () => _selectMeal(context, featuredMeal),
-        ),
-        _MealSection(
-          title: 'Popular Recipes',
-          subtitle: 'Start cooking something delicious today',
-          meals: availableMeals,
-          onSelectMeal: (meal) => _selectMeal(context, meal),
-        ),
-        _MealSection(
-          title: 'Indian Favourites',
-          subtitle: 'Comfort food with bold flavours',
-          meals: indianMeals,
-          onSelectMeal: (meal) => _selectMeal(context, meal),
-        ),
-        _MealSection(
-          title: 'Quick & Easy',
-          subtitle: 'Fast meals for busy days',
-          meals: quickMeals,
-          onSelectMeal: (meal) => _selectMeal(context, meal),
-        ),
-        _MealSection(
-          title: 'Healthy Picks',
-          subtitle: 'Fresh, balanced and lighter recipes',
-          meals: healthyMeals,
-          onSelectMeal: (meal) => _selectMeal(context, meal),
-        ),
-        _MealSection(
-          title: 'Breakfast Ideas',
-          subtitle: 'Start your day with something tasty',
-          meals: breakfastMeals,
-          onSelectMeal: (meal) => _selectMeal(context, meal),
-        ),
-        const SizedBox(height: 24),
-      ],
-    );
+  List<Meal> _mealsForCategory(List<Meal> meals, Category category) {
+    return meals.where((meal) {
+      return meal.categories.contains(category.id);
+    }).toList();
   }
 }
 
@@ -95,14 +88,6 @@ class _FeaturedRecipe extends StatelessWidget {
               height: 320,
               width: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 320,
-                  alignment: Alignment.center,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: const Icon(Icons.broken_image),
-                );
-              },
             ),
           ),
           Positioned.fill(

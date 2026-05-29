@@ -28,23 +28,29 @@ final filtersProvider =
       (ref) => FiltersNotifier(),
     );
 
-final filteredMealsProvider = Provider((ref) {
-  final meals = ref.watch(mealsProvider);
+final filteredMealsProvider = Provider<AsyncValue<List<dynamic>>>((ref) {
+  final mealsAsync = ref.watch(mealsProvider);
   final activeFilters = ref.watch(filtersProvider);
 
-  return meals.where((meal) {
-    if (activeFilters[Filter.glutenFree]! && !meal.isGlutenFree) {
-      return false;
-    }
-    if (activeFilters[Filter.lactoseFree]! && !meal.isLactoseFree) {
-      return false;
-    }
-    if (activeFilters[Filter.vegetarian]! && !meal.isVegetarian) {
-      return false;
-    }
-    if (activeFilters[Filter.vegan]! && !meal.isVegan) {
-      return false;
-    }
-    return true;
-  }).toList();
+  return mealsAsync.whenData((meals) {
+    return meals.where((meal) {
+      if (activeFilters[Filter.glutenFree]! && !meal.isGlutenFree) {
+        return false;
+      }
+
+      if (activeFilters[Filter.lactoseFree]! && !meal.isLactoseFree) {
+        return false;
+      }
+
+      if (activeFilters[Filter.vegetarian]! && !meal.isVegetarian) {
+        return false;
+      }
+
+      if (activeFilters[Filter.vegan]! && !meal.isVegan) {
+        return false;
+      }
+
+      return true;
+    }).toList();
+  });
 });
