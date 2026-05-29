@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/legacy.dart';
 
-import 'package:meals/services/auth_service.dart';
+import 'package:abcdish/services/auth_service.dart';
 
 class AuthState {
   const AuthState({

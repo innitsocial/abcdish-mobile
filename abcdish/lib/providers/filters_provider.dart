@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:meals/providers/meals_provider.dart';
+import 'package:abcdish/providers/meals_provider.dart';
 
 enum Filter { glutenFree, lactoseFree, vegetarian, vegan }
 

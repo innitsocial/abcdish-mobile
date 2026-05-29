@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:meals/models/meal.dart';
+import 'package:abcdish/models/meal.dart';
 
 class MealHorizontalCard extends StatelessWidget {
   const MealHorizontalCard({

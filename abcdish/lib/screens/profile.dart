@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:meals/providers/auth_provider.dart';
-import 'package:meals/screens/login.dart';
-import 'package:meals/screens/register.dart';
+import 'package:abcdish/providers/auth_provider.dart';
+import 'package:abcdish/screens/login.dart';
+import 'package:abcdish/screens/register.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});

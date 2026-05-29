@@ -2,9 +2,9 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
-import 'package:meals/providers/shopping_list_provider.dart';
-import 'package:meals/models/meal.dart';
-import 'package:meals/providers/favorites_provider.dart';
+import 'package:abcdish/providers/shopping_list_provider.dart';
+import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/providers/favorites_provider.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
   const MealDetailsScreen({super.key, required this.meal});

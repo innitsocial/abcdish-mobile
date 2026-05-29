@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:meals/data/dummy_data.dart';
-import 'package:meals/models/meal.dart';
-import 'package:meals/screens/meal_details.dart';
-import 'package:meals/widgets/meal_horizontal_card.dart';
-import 'package:meals/widgets/section_header.dart';
+import 'package:abcdish/data/dummy_data.dart';
+import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/screens/meal_details.dart';
+import 'package:abcdish/widgets/meal_horizontal_card.dart';
+import 'package:abcdish/widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, required this.availableMeals});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:meals/models/category.dart';
-import 'package:meals/models/meal.dart';
+import 'package:abcdish/models/category.dart';
+import 'package:abcdish/models/meal.dart';
 
 const availableCategories = [
   Category(id: 'c1', title: 'Indian', color: Colors.orange),

@@ -1,4 +1,4 @@
-import 'package:meals/services/api_client.dart';
+import 'package:abcdish/services/api_client.dart';
 
 class AuthService {
   AuthService._internal();
