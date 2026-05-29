@@ -8,6 +8,7 @@ import 'package:meals/screens/filters.dart';
 import 'package:meals/screens/meals.dart';
 import 'package:meals/screens/shopping_list.dart';
 import 'package:meals/widgets/main_drawer.dart';
+import 'package:meals/screens/home.dart';
 
 const kInitialFilters = {
   Filter.glutenFree: false,
@@ -47,12 +48,17 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   @override
   Widget build(BuildContext context) {
     final availableMeals = ref.watch(filteredMealsProvider);
-
-    Widget activePage = CategoriesScreen(availableMeals: availableMeals);
+    Widget activePage = HomeScreen(availableMeals: availableMeals);
 
     var activePageTitle = 'ABCDish';
 
     if (_selectedPageIndex == 1) {
+      activePage = SearchScreen(availableMeals: availableMeals);
+
+      activePageTitle = 'Search';
+    }
+
+    if (_selectedPageIndex == 2) {
       final favoriteMeals = ref.watch(favoriteMealsProvider);
 
       activePage = MealsScreen(meals: favoriteMeals);
@@ -60,7 +66,7 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       activePageTitle = 'Your Favourites';
     }
 
-    if (_selectedPageIndex == 2) {
+    if (_selectedPageIndex == 3) {
       activePage = const ShoppingListScreen();
       activePageTitle = 'Shopping List';
     }
@@ -73,10 +79,8 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         onTap: _selectPage,
         currentIndex: _selectedPageIndex,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.restaurant_menu),
-            label: 'Recipes',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
           BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favourites'),
           BottomNavigationBarItem(
             icon: Icon(Icons.shopping_cart),
