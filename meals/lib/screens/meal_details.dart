@@ -1,3 +1,4 @@
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
@@ -17,6 +18,7 @@ class MealDetailsScreen extends ConsumerStatefulWidget {
 class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
   late VideoPlayerController _videoController;
   bool _isVideoReady = false;
+  ChewieController? _chewieController;
 
   @override
   void initState() {
@@ -30,6 +32,20 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         .initialize()
         .then((_) {
           if (!mounted) return;
+
+          _chewieController = ChewieController(
+            videoPlayerController: _videoController,
+            autoPlay: false,
+            looping: false,
+            allowFullScreen: true,
+            allowMuting: true,
+            showControls: true,
+            materialProgressColors: ChewieProgressColors(
+              playedColor: Theme.of(context).colorScheme.primary,
+              handleColor: Theme.of(context).colorScheme.primary,
+            ),
+          );
+
           setState(() {
             _isVideoReady = true;
           });
@@ -37,6 +53,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         .catchError((error) {
           debugPrint('Video error: $error');
           if (!mounted) return;
+
           setState(() {
             _isVideoReady = false;
           });
@@ -45,16 +62,9 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
   @override
   void dispose() {
+    _chewieController?.dispose();
     _videoController.dispose();
     super.dispose();
-  }
-
-  void _toggleVideo() {
-    setState(() {
-      _videoController.value.isPlaying
-          ? _videoController.pause()
-          : _videoController.play();
-    });
   }
 
   Widget _buildVideoPlayer() {
@@ -71,37 +81,16 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       );
     }
 
-    if (!_isVideoReady) {
+    if (!_isVideoReady || _chewieController == null) {
       return const SizedBox(
         height: 250,
         child: Center(child: CircularProgressIndicator()),
       );
     }
 
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        AspectRatio(
-          aspectRatio: _videoController.value.aspectRatio,
-          child: VideoPlayer(_videoController),
-        ),
-        Container(
-          decoration: const BoxDecoration(
-            color: Colors.black45,
-            shape: BoxShape.circle,
-          ),
-          child: IconButton(
-            iconSize: 64,
-            color: Colors.white,
-            icon: Icon(
-              _videoController.value.isPlaying
-                  ? Icons.pause_circle
-                  : Icons.play_circle,
-            ),
-            onPressed: _toggleVideo,
-          ),
-        ),
-      ],
+    return AspectRatio(
+      aspectRatio: _videoController.value.aspectRatio,
+      child: Chewie(controller: _chewieController!),
     );
   }
 
