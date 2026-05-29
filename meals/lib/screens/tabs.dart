@@ -8,6 +8,8 @@ import 'package:meals/screens/meals.dart';
 import 'package:meals/screens/search.dart';
 import 'package:meals/screens/shopping_list.dart';
 import 'package:meals/widgets/main_drawer.dart';
+import 'package:meals/widgets/app_bottom_nav.dart';
+import 'package:meals/screens/profile.dart';
 import 'package:meals/screens/home.dart';
 
 const kInitialFilters = {
@@ -71,22 +73,18 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       activePageTitle = 'Shopping List';
     }
 
+    if (_selectedPageIndex == 4) {
+      activePage = const ProfileScreen();
+      activePageTitle = 'Profile';
+    }
+
     return Scaffold(
       appBar: AppBar(title: Text(activePageTitle)),
       drawer: MainDrawer(onSelectScreen: _setScreen),
       body: activePage,
-      bottomNavigationBar: BottomNavigationBar(
-        onTap: _selectPage,
+      bottomNavigationBar: AppBottomNav(
         currentIndex: _selectedPageIndex,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-          BottomNavigationBarItem(icon: Icon(Icons.star), label: 'Favourites'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Shopping',
-          ),
-        ],
+        onTap: _selectPage,
       ),
     );
   }
