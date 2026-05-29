@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
-
+import 'package:meals/providers/shopping_list_provider.dart';
 import 'package:meals/models/meal.dart';
+import 'package:meals/providers/favorites_provider.dart';
 
-class MealDetailsScreen extends StatefulWidget {
+class MealDetailsScreen extends ConsumerStatefulWidget {
   const MealDetailsScreen({super.key, required this.meal});
 
   final Meal meal;
 
   @override
-  State<MealDetailsScreen> createState() => _MealDetailsScreenState();
+  ConsumerState<MealDetailsScreen> createState() => _MealDetailsScreenState();
 }
 
-class _MealDetailsScreenState extends State<MealDetailsScreen> {
+class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
   late VideoPlayerController _videoController;
   bool _isVideoReady = false;
 
@@ -28,16 +30,13 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
         .initialize()
         .then((_) {
           if (!mounted) return;
-
           setState(() {
             _isVideoReady = true;
           });
         })
         .catchError((error) {
           debugPrint('Video error: $error');
-
           if (!mounted) return;
-
           setState(() {
             _isVideoReady = false;
           });
@@ -50,28 +49,24 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
     super.dispose();
   }
 
-  Widget _buildSectionTitle(String text) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 14),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleLarge!.copyWith(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
+  void _toggleVideo() {
+    setState(() {
+      _videoController.value.isPlaying
+          ? _videoController.pause()
+          : _videoController.play();
+    });
   }
 
   Widget _buildVideoPlayer() {
     if (_videoController.value.hasError) {
-      return SizedBox(
+      return Container(
         height: 250,
-        child: Center(
-          child: Text(
-            'Video failed to load.\n${_videoController.value.errorDescription ?? ''}',
-            textAlign: TextAlign.center,
-          ),
+        color: Colors.black,
+        alignment: Alignment.center,
+        child: Text(
+          'Video failed to load.\n${_videoController.value.errorDescription ?? ''}',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white),
         ),
       );
     }
@@ -90,71 +85,205 @@ class _MealDetailsScreenState extends State<MealDetailsScreen> {
           aspectRatio: _videoController.value.aspectRatio,
           child: VideoPlayer(_videoController),
         ),
-        IconButton(
-          iconSize: 64,
-          color: Colors.white,
-          icon: Icon(
-            _videoController.value.isPlaying
-                ? Icons.pause_circle
-                : Icons.play_circle,
+        Container(
+          decoration: const BoxDecoration(
+            color: Colors.black45,
+            shape: BoxShape.circle,
           ),
-          onPressed: () {
-            setState(() {
+          child: IconButton(
+            iconSize: 64,
+            color: Colors.white,
+            icon: Icon(
               _videoController.value.isPlaying
-                  ? _videoController.pause()
-                  : _videoController.play();
-            });
-          },
+                  ? Icons.pause_circle
+                  : Icons.play_circle,
+            ),
+            onPressed: _toggleVideo,
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInfoChip({required IconData icon, required String label}) {
+    return Chip(avatar: Icon(icon, size: 18), label: Text(label));
+  }
+
+  Widget _buildSectionTitle(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 24, bottom: 12),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleLarge!.copyWith(
+          color: Theme.of(context).colorScheme.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  void _addAllIngredients() {
+    ref
+        .read(shoppingListProvider.notifier)
+        .addIngredients(widget.meal.ingredients);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${widget.meal.ingredients.length} ingredients added to shopping list',
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final meal = widget.meal;
+    final colorScheme = Theme.of(context).colorScheme;
+    final favoriteMeals = ref.watch(favoriteMealsProvider);
+    final isFavorite = favoriteMeals.contains(meal);
 
     return Scaffold(
-      appBar: AppBar(title: Text(meal.title)),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Hero(tag: meal.id, child: _buildVideoPlayer()),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                meal.description,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            ),
-            _buildSectionTitle('Ingredients'),
-            for (final ingredient in meal.ingredients)
-              Text(
-                ingredient,
-                style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-            const SizedBox(height: 24),
-            _buildSectionTitle('Steps'),
-            for (final step in meal.steps)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: Text(
-                  step,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
+      appBar: AppBar(
+        title: Text(meal.title),
+        actions: [
+          IconButton(
+            onPressed: () {
+              final wasAdded = ref
+                  .read(favoriteMealsProvider.notifier)
+                  .toggleMealFavoriteStatus(meal);
+
+              ScaffoldMessenger.of(context).clearSnackBars();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    wasAdded
+                        ? 'Recipe added to favourites'
+                        : 'Recipe removed from favourites',
                   ),
                 ),
+              );
+            },
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return RotationTransition(
+                  turns: Tween(begin: 0.8, end: 1.0).animate(animation),
+                  child: child,
+                );
+              },
+              child: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                key: ValueKey(isFavorite),
+                color: isFavorite ? Colors.red : null,
               ),
-            const SizedBox(height: 24),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addAllIngredients,
+        icon: const Icon(Icons.shopping_cart),
+        label: const Text('Add ingredients'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.only(bottom: 96),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Hero(
+              tag: meal.id,
+              child: Material(color: Colors.black, child: _buildVideoPlayer()),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    meal.title,
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    meal.description,
+                    style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                      color: colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildInfoChip(
+                        icon: Icons.schedule,
+                        label: '${meal.duration} min',
+                      ),
+                      _buildInfoChip(
+                        icon: Icons.local_fire_department,
+                        label: meal.complexity.name,
+                      ),
+                      _buildInfoChip(
+                        icon: Icons.payments,
+                        label: meal.affordability.name,
+                      ),
+                    ],
+                  ),
+                  _buildSectionTitle('Ingredients'),
+                  ...meal.ingredients.map(
+                    (ingredient) => Card(
+                      child: ListTile(
+                        leading: Icon(
+                          Icons.check_circle_outline,
+                          color: colorScheme.primary,
+                        ),
+                        title: Text(
+                          ingredient,
+                          style: TextStyle(color: colorScheme.onSurface),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add_shopping_cart),
+                          onPressed: () {
+                            ref
+                                .read(shoppingListProvider.notifier)
+                                .addIngredient(ingredient);
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '$ingredient added to shopping list',
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  _buildSectionTitle('Cooking Steps'),
+                  ...meal.steps.asMap().entries.map((entry) {
+                    final index = entry.key + 1;
+                    final step = entry.value;
+
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      child: ListTile(
+                        leading: CircleAvatar(child: Text('$index')),
+                        title: Text(
+                          step,
+                          style: TextStyle(color: colorScheme.onSurface),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ),
           ],
         ),
       ),
