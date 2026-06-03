@@ -15,22 +15,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   String _name = '';
   String _email = '';
+  String _mobileNumber = '';
   String _password = '';
+
+  bool _useEmail = true;
+  bool _useMobile = false;
 
   Future<void> _submit() async {
     final isValid = _formKey.currentState!.validate();
-
     if (!isValid) return;
 
     _formKey.currentState!.save();
 
     final success = await ref
         .read(authProvider.notifier)
-        .register(name: _name, email: _email, password: _password);
+        .register(
+          name: _name,
+          email: _useEmail ? _email : null,
+          mobileNumber: _useMobile ? _mobileNumber : null,
+          password: _useEmail ? _password : null,
+        );
 
     if (!mounted) return;
-
-    final authState = ref.read(authProvider);
 
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -41,7 +47,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(authState.errorMessage ?? 'Registration failed'),
+          content: Text(
+            ref.read(authProvider).errorMessage ?? 'Registration failed',
+          ),
         ),
       );
     }
@@ -75,6 +83,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       'Join ABCDish',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Create your account using email, mobile, or both.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     const SizedBox(height: 24),
                     TextFormField(
                       decoration: const InputDecoration(
@@ -93,51 +107,108 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                         _name = value!.trim();
                       },
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: Icon(Icons.email_outlined),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      value: _useEmail,
+                      title: const Text('Use email'),
+                      subtitle: const Text(
+                        'Recommended for password login and recovery',
                       ),
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null ||
-                            value.trim().isEmpty ||
-                            !value.contains('@')) {
-                          return 'Enter a valid email address';
-                        }
-
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _email = value!.trim();
+                      onChanged: (value) {
+                        setState(() {
+                          _useEmail = value;
+                          if (!_useEmail && !_useMobile) {
+                            _useMobile = true;
+                          }
+                        });
                       },
                     ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: Icon(Icons.lock_outline),
-                      ),
-                      obscureText: true,
-                      textInputAction: TextInputAction.done,
-                      validator: (value) {
-                        if (value == null || value.trim().length < 6) {
-                          return 'Password must be at least 6 characters';
-                        }
+                    if (_useEmail) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (!_useEmail) return null;
 
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _password = value!.trim();
-                      },
-                      onFieldSubmitted: (_) {
-                        if (!authState.isLoading) {
-                          _submit();
-                        }
+                          if (value == null ||
+                              value.trim().isEmpty ||
+                              !value.contains('@')) {
+                            return 'Enter a valid email address';
+                          }
+
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _email = value?.trim() ?? '';
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                        obscureText: true,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) {
+                          if (!_useEmail) return null;
+
+                          if (value == null || value.trim().length < 6) {
+                            return 'Password must be at least 6 characters';
+                          }
+
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _password = value?.trim() ?? '';
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      value: _useMobile,
+                      title: const Text('Use mobile number'),
+                      subtitle: const Text(
+                        'Useful for OTP login and account recovery',
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _useMobile = value;
+                          if (!_useEmail && !_useMobile) {
+                            _useEmail = true;
+                          }
+                        });
                       },
                     ),
+                    if (_useMobile) ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        decoration: const InputDecoration(
+                          labelText: 'Mobile number',
+                          hintText: '+447123456789',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                        keyboardType: TextInputType.phone,
+                        textInputAction: TextInputAction.done,
+                        validator: (value) {
+                          if (!_useMobile) return null;
+
+                          if (value == null || value.trim().length < 8) {
+                            return 'Enter a valid mobile number';
+                          }
+
+                          return null;
+                        },
+                        onSaved: (value) {
+                          _mobileNumber = value?.trim() ?? '';
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,

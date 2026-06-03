@@ -2,9 +2,11 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
-import 'package:abcdish/providers/shopping_list_provider.dart';
+
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/favorites_provider.dart';
+import 'package:abcdish/providers/shopping_list_provider.dart';
+import 'package:abcdish/services/video_access_service.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
   const MealDetailsScreen({super.key, required this.meal});
@@ -17,8 +19,12 @@ class MealDetailsScreen extends ConsumerStatefulWidget {
 
 class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
   late VideoPlayerController _videoController;
-  bool _isVideoReady = false;
   ChewieController? _chewieController;
+
+  bool _isVideoReady = false;
+  bool _checkingVideoAccess = false;
+  bool _videoAccessAllowed = false;
+  String? _videoAccessMessage;
 
   @override
   void initState() {
@@ -40,10 +46,6 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
             allowFullScreen: true,
             allowMuting: true,
             showControls: true,
-            materialProgressColors: ChewieProgressColors(
-              playedColor: Theme.of(context).colorScheme.primary,
-              handleColor: Theme.of(context).colorScheme.primary,
-            ),
           );
 
           setState(() {
@@ -53,7 +55,6 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         .catchError((error) {
           debugPrint('Video error: $error');
           if (!mounted) return;
-
           setState(() {
             _isVideoReady = false;
           });
@@ -65,6 +66,61 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     _chewieController?.dispose();
     _videoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _checkAccessAndPlay() async {
+    if (_videoAccessAllowed) {
+      await _videoController.play();
+      setState(() {});
+      return;
+    }
+
+    setState(() {
+      _checkingVideoAccess = true;
+      _videoAccessMessage = null;
+    });
+
+    try {
+      final access = await VideoAccessService.instance.recordVideoView(
+        widget.meal.id,
+      );
+
+      if (!mounted) return;
+
+      if (!access.allowed) {
+        setState(() {
+          _checkingVideoAccess = false;
+          _videoAccessMessage = access.message;
+        });
+
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(access.message)));
+        return;
+      }
+
+      setState(() {
+        _videoAccessAllowed = true;
+        _checkingVideoAccess = false;
+        _videoAccessMessage = access.membershipStatus == 'ACTIVE'
+            ? 'Unlimited videos enabled'
+            : '${access.remainingViews} videos remaining this month';
+      });
+
+      await _videoController.play();
+      setState(() {});
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _checkingVideoAccess = false;
+        _videoAccessMessage = 'Please login to watch this video';
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login to watch this video')),
+      );
+    }
   }
 
   Widget _buildVideoPlayer() {
@@ -88,9 +144,31 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       );
     }
 
-    return AspectRatio(
-      aspectRatio: _videoController.value.aspectRatio,
-      child: Chewie(controller: _chewieController!),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AspectRatio(
+          aspectRatio: _videoController.value.aspectRatio,
+          child: _videoAccessAllowed
+              ? Chewie(controller: _chewieController!)
+              : VideoPlayer(_videoController),
+        ),
+        if (!_videoAccessAllowed)
+          Positioned.fill(
+            child: Container(
+              color: Colors.black45,
+              child: Center(
+                child: _checkingVideoAccess
+                    ? const CircularProgressIndicator()
+                    : FilledButton.icon(
+                        onPressed: _checkAccessAndPlay,
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('Watch & Cook'),
+                      ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -130,7 +208,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     final meal = widget.meal;
     final colorScheme = Theme.of(context).colorScheme;
     final favoriteMeals = ref.watch(favoriteMealsProvider);
-    final isFavorite = favoriteMeals.contains(meal);
+    final isFavorite = favoriteMeals.any((item) => item.id == meal.id);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,7 +221,6 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                   .toggleMealFavoriteStatus(meal);
 
               ScaffoldMessenger.of(context).clearSnackBars();
-
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -154,19 +231,9 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                 ),
               );
             },
-            icon: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) {
-                return RotationTransition(
-                  turns: Tween(begin: 0.8, end: 1.0).animate(animation),
-                  child: child,
-                );
-              },
-              child: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                key: ValueKey(isFavorite),
-                color: isFavorite ? Colors.red : null,
-              ),
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? Colors.red : null,
             ),
           ),
         ],
@@ -181,10 +248,15 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Hero(
-              tag: meal.id,
-              child: Material(color: Colors.black, child: _buildVideoPlayer()),
-            ),
+            Material(color: Colors.black, child: _buildVideoPlayer()),
+            if (_videoAccessMessage != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Text(
+                  _videoAccessMessage!,
+                  style: TextStyle(color: colorScheme.primary),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(

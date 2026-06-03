@@ -1,27 +1,29 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/screens/splash.dart';
 import 'package:abcdish/screens/tabs.dart';
 
-final theme = ThemeData(
-  useMaterial3: true,
-  colorScheme: ColorScheme.fromSeed(
-    brightness: Brightness.dark,
-    seedColor: const Color.fromARGB(255, 131, 57, 0),
-  ),
-  textTheme: GoogleFonts.latoTextTheme(),
-);
-
 void main() {
-  runApp(const ProviderScope(child: App()));
+  runApp(const ProviderScope(child: ABCDishApp()));
 }
 
-class App extends StatelessWidget {
-  const App({super.key});
+class ABCDishApp extends StatelessWidget {
+  const ABCDishApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(theme: theme, home: const TabsScreen());
+    return MaterialApp(
+      title: 'ABCDish',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepOrange,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: const SplashScreen(child: TabsScreen()),
+    );
   }
 }

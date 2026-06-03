@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
+import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/login.dart';
+import 'package:abcdish/screens/oauth_login.dart';
+import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -23,6 +27,8 @@ class ProfileScreen extends ConsumerWidget {
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
     await ref.read(authProvider.notifier).logout();
 
+    ref.invalidate(appSessionProvider);
+
     if (!context.mounted) return;
 
     ScaffoldMessenger.of(
@@ -33,6 +39,218 @@ class ProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
+    final sessionAsync = ref.watch(appSessionProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    if (!authState.isLoggedIn) {
+      return _LoggedOutProfile(
+        onLogin: () => _openLogin(context),
+        onRegister: () => _openRegister(context),
+      );
+    }
+
+    return sessionAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Icon(Icons.error_outline, size: 60),
+          const SizedBox(height: 16),
+          Text(
+            'Could not load profile',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text('$error', textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: () => _logout(context, ref),
+            icon: const Icon(Icons.logout),
+            label: const Text('Logout'),
+          ),
+        ],
+      ),
+      data: (session) {
+        if (session == null) {
+          return _LoggedOutProfile(
+            onLogin: () => _openLogin(context),
+            onRegister: () => _openRegister(context),
+          );
+        }
+
+        final isPaid = session.membershipStatus == 'ACTIVE';
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            CircleAvatar(
+              radius: 48,
+              backgroundColor: colorScheme.primaryContainer,
+              child: Icon(
+                isPaid ? Icons.workspace_premium : Icons.person,
+                size: 52,
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              session.name?.isNotEmpty == true
+                  ? 'Welcome ${session.name}'
+                  : 'Welcome back',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              isPaid
+                  ? 'ABCDish Member: unlimited cooking videos.'
+                  : 'Free plan: ${session.remainingViews} videos remaining this month.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.workspace_premium,
+                  color: colorScheme.primary,
+                ),
+                title: Text(isPaid ? 'ABCDish Member' : 'Free Plan'),
+                subtitle: Text(
+                  isPaid
+                      ? 'Unlimited videos enabled'
+                      : '${session.monthlyVideoViews} used • ${session.remainingViews} remaining',
+                ),
+                trailing: session.features.shouldShowUpgrade
+                    ? FilledButton(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Membership upgrade coming soon'),
+                            ),
+                          );
+                        },
+                        child: const Text('Upgrade'),
+                      )
+                    : const Icon(Icons.check_circle),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.verified_user_outlined),
+                title: const Text('Account verification'),
+                subtitle: Text(
+                  'Email: ${session.emailVerified ? "Verified" : "Not verified"}\n'
+                  'Mobile: ${session.mobileVerified ? "Verified" : "Not verified"}',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.admin_panel_settings_outlined),
+                title: const Text('Role'),
+                subtitle: Text(session.role),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (session.features.canUploadRecipes)
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.upload_file),
+                  title: const Text('Creator tools'),
+                  subtitle: const Text('Recipe upload enabled'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const CreatorUploadScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            if (session.features.canAccessAdmin)
+              const Card(
+                child: ListTile(
+                  leading: Icon(Icons.dashboard_customize),
+                  title: Text('Admin dashboard'),
+                  subtitle: Text('Admin access enabled'),
+                ),
+              ),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.storefront),
+                title: const Text('Partner stores'),
+                subtitle: const Text('Buy ingredients from local partners'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const PartnerStoresScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const OAuthLoginScreen()),
+                );
+              },
+              icon: const Icon(Icons.login),
+              label: const Text('Manage social login'),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => _logout(context, ref),
+              icon: const Icon(Icons.logout),
+              label: const Text('Logout'),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+            const ListTile(
+              leading: Icon(Icons.info_outline),
+              title: Text('About ABCDish'),
+              subtitle: Text('Any Buddy Can Dish'),
+            ),
+            const ListTile(
+              leading: Icon(Icons.privacy_tip_outlined),
+              title: Text('Privacy Policy'),
+            ),
+            const ListTile(
+              leading: Icon(Icons.settings_outlined),
+              title: Text('Settings'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LoggedOutProfile extends StatelessWidget {
+  const _LoggedOutProfile({required this.onLogin, required this.onRegister});
+
+  final VoidCallback onLogin;
+  final VoidCallback onRegister;
+
+  @override
+  Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return ListView(
@@ -42,61 +260,57 @@ class ProfileScreen extends ConsumerWidget {
           radius: 48,
           backgroundColor: colorScheme.primaryContainer,
           child: Icon(
-            authState.isLoggedIn ? Icons.verified_user : Icons.person,
+            Icons.person,
             size: 52,
             color: colorScheme.onPrimaryContainer,
           ),
         ),
         const SizedBox(height: 16),
         Text(
-          authState.isLoggedIn ? 'Welcome back' : 'Welcome to ABCDish',
+          'Welcome to ABCDish',
           textAlign: TextAlign.center,
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall!.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
-          authState.isLoggedIn
-              ? 'Your favourites and shopping list can now be synced with your account.'
-              : 'Login to save favourites and shopping lists across devices.',
+          'Login to save favourites, shopping lists and watch more videos.',
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w500,
+          ),
         ),
         const SizedBox(height: 24),
-        if (!authState.isLoggedIn) ...[
-          FilledButton.icon(
-            onPressed: () => _openLogin(context),
-            icon: const Icon(Icons.login),
-            label: const Text('Login'),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () => _openRegister(context),
-            icon: const Icon(Icons.person_add),
-            label: const Text('Create Account'),
-          ),
-        ] else ...[
-          FilledButton.icon(
-            onPressed: () => _logout(context, ref),
-            icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
-          ),
-        ],
+        FilledButton.icon(
+          onPressed: onLogin,
+          icon: const Icon(Icons.login),
+          label: const Text('Login'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: onRegister,
+          icon: const Icon(Icons.person_add),
+          label: const Text('Create Account'),
+        ),
+        const SizedBox(height: 12),
+        TextButton.icon(
+          onPressed: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const OAuthLoginScreen()));
+          },
+          icon: const Icon(Icons.login),
+          label: const Text('Continue with social login'),
+        ),
         const SizedBox(height: 24),
         const Divider(),
         const ListTile(
           leading: Icon(Icons.info_outline),
           title: Text('About ABCDish'),
           subtitle: Text('Any Buddy Can Dish'),
-        ),
-        const ListTile(
-          leading: Icon(Icons.privacy_tip_outlined),
-          title: Text('Privacy Policy'),
-        ),
-        const ListTile(
-          leading: Icon(Icons.settings_outlined),
-          title: Text('Settings'),
         ),
       ],
     );

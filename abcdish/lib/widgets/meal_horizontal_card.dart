@@ -27,24 +27,21 @@ class MealHorizontalCard extends StatelessWidget {
           ),
           child: Stack(
             children: [
-              Hero(
-                tag: meal.id,
-                child: Image.network(
-                  meal.imageUrl,
-                  height: 150,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 150,
-                      alignment: Alignment.center,
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.surfaceContainerHighest,
-                      child: const Icon(Icons.broken_image),
-                    );
-                  },
-                ),
+              Image.network(
+                meal.imageUrl,
+                height: 150,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    height: 150,
+                    alignment: Alignment.center,
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    child: const Icon(Icons.broken_image),
+                  );
+                },
               ),
               Positioned.fill(
                 child: DecoratedBox(
