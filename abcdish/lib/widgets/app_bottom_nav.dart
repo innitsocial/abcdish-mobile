@@ -17,9 +17,9 @@ class AppBottomNav extends StatelessWidget {
       onDestinationSelected: onTap,
       destinations: const [
         NavigationDestination(
-          icon: Icon(Icons.dynamic_feed_outlined),
-          selectedIcon: Icon(Icons.dynamic_feed),
-          label: 'Feed',
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
         ),
         NavigationDestination(
           icon: Icon(Icons.search_outlined),
@@ -29,17 +29,12 @@ class AppBottomNav extends StatelessWidget {
         NavigationDestination(
           icon: Icon(Icons.favorite_border),
           selectedIcon: Icon(Icons.favorite),
-          label: 'Saved',
+          label: 'Favourites',
         ),
         NavigationDestination(
           icon: Icon(Icons.shopping_cart_outlined),
           selectedIcon: Icon(Icons.shopping_cart),
           label: 'Shopping',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.emoji_events_outlined),
-          selectedIcon: Icon(Icons.emoji_events),
-          label: 'Contests',
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),

@@ -3,10 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
-import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/login.dart';
-import 'package:abcdish/screens/oauth_login.dart';
-import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -166,19 +163,11 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 12),
             if (session.features.canUploadRecipes)
-              Card(
+              const Card(
                 child: ListTile(
-                  leading: const Icon(Icons.upload_file),
-                  title: const Text('Creator tools'),
-                  subtitle: const Text('Recipe upload enabled'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const CreatorUploadScreen(),
-                      ),
-                    );
-                  },
+                  leading: Icon(Icons.upload_file),
+                  title: Text('Creator tools'),
+                  subtitle: Text('Recipe upload enabled'),
                 ),
               ),
             if (session.features.canAccessAdmin)
@@ -189,32 +178,6 @@ class ProfileScreen extends ConsumerWidget {
                   subtitle: Text('Admin access enabled'),
                 ),
               ),
-            const SizedBox(height: 12),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.storefront),
-                title: const Text('Partner stores'),
-                subtitle: const Text('Buy ingredients from local partners'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => const PartnerStoresScreen(),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const OAuthLoginScreen()),
-                );
-              },
-              icon: const Icon(Icons.login),
-              label: const Text('Manage social login'),
-            ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () => _logout(context, ref),
@@ -294,16 +257,6 @@ class _LoggedOutProfile extends StatelessWidget {
           onPressed: onRegister,
           icon: const Icon(Icons.person_add),
           label: const Text('Create Account'),
-        ),
-        const SizedBox(height: 12),
-        TextButton.icon(
-          onPressed: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const OAuthLoginScreen()));
-          },
-          icon: const Icon(Icons.login),
-          label: const Text('Continue with social login'),
         ),
         const SizedBox(height: 24),
         const Divider(),

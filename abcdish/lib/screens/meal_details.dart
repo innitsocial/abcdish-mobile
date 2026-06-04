@@ -18,157 +18,201 @@ class MealDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
-  late VideoPlayerController _videoController;
+  VideoPlayerController? _videoController;
   ChewieController? _chewieController;
 
   bool _isVideoReady = false;
+  bool _isInitialisingVideo = false;
   bool _checkingVideoAccess = false;
   bool _videoAccessAllowed = false;
   String? _videoAccessMessage;
 
   @override
-  void initState() {
-    super.initState();
-
-    _videoController = VideoPlayerController.networkUrl(
-      Uri.parse(widget.meal.videoUrl),
-    );
-
-    _videoController
-        .initialize()
-        .then((_) {
-          if (!mounted) return;
-
-          _chewieController = ChewieController(
-            videoPlayerController: _videoController,
-            autoPlay: false,
-            looping: false,
-            allowFullScreen: true,
-            allowMuting: true,
-            showControls: true,
-          );
-
-          setState(() {
-            _isVideoReady = true;
-          });
-        })
-        .catchError((error) {
-          debugPrint('Video error: $error');
-          if (!mounted) return;
-          setState(() {
-            _isVideoReady = false;
-          });
-        });
-  }
-
-  @override
   void dispose() {
-    _chewieController?.dispose();
-    _videoController.dispose();
+    _disposeVideo();
     super.dispose();
   }
 
-  Future<void> _checkAccessAndPlay() async {
-    if (_videoAccessAllowed) {
-      await _videoController.play();
-      setState(() {});
-      return;
+  Future<void> _disposeVideo() async {
+    final chewie = _chewieController;
+    final video = _videoController;
+
+    _chewieController = null;
+    _videoController = null;
+    _isVideoReady = false;
+
+    chewie?.dispose();
+    await video?.dispose();
+  }
+
+  Future<bool> _ensureVideoReady() async {
+    if (_isVideoReady &&
+        _chewieController != null &&
+        _videoController != null) {
+      return true;
+    }
+
+    if (_isInitialisingVideo) {
+      return false;
+    }
+
+    final url = widget.meal.videoUrl.trim();
+    if (url.isEmpty) {
+      setState(() {
+        _videoAccessMessage = 'Video is not available for this recipe yet.';
+      });
+      return false;
     }
 
     setState(() {
-      _checkingVideoAccess = true;
+      _isInitialisingVideo = true;
       _videoAccessMessage = null;
     });
 
     try {
-      final access = await VideoAccessService.instance.recordVideoView(
-        widget.meal.id,
-      );
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      await controller.initialize();
 
-      if (!mounted) return;
-
-      if (!access.allowed) {
-        setState(() {
-          _checkingVideoAccess = false;
-          _videoAccessMessage = access.message;
-        });
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(access.message)));
-        return;
+      if (!mounted) {
+        await controller.dispose();
+        return false;
       }
 
-      setState(() {
-        _videoAccessAllowed = true;
-        _checkingVideoAccess = false;
-        _videoAccessMessage = access.membershipStatus == 'ACTIVE'
-            ? 'Unlimited videos enabled'
-            : '${access.remainingViews} videos remaining this month';
-      });
-
-      await _videoController.play();
-      setState(() {});
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _checkingVideoAccess = false;
-        _videoAccessMessage = 'Please login to watch this video';
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login to watch this video')),
+      final chewieController = ChewieController(
+        videoPlayerController: controller,
+        autoPlay: false,
+        looping: false,
+        allowFullScreen: true,
+        allowMuting: true,
+        showControls: true,
+        aspectRatio: controller.value.aspectRatio,
       );
+
+      setState(() {
+        _videoController = controller;
+        _chewieController = chewieController;
+        _isVideoReady = true;
+        _isInitialisingVideo = false;
+      });
+
+      return true;
+    } catch (error) {
+      debugPrint('Video initialisation error: $error');
+      if (!mounted) return false;
+
+      setState(() {
+        _isInitialisingVideo = false;
+        _isVideoReady = false;
+        _videoAccessMessage = 'Unable to load cooking video.';
+      });
+      return false;
     }
   }
 
+  Future<void> _checkAccessAndPlay() async {
+    if (_checkingVideoAccess || _isInitialisingVideo) {
+      return;
+    }
+
+    if (!_videoAccessAllowed) {
+      setState(() {
+        _checkingVideoAccess = true;
+        _videoAccessMessage = null;
+      });
+
+      try {
+        final access = await VideoAccessService.instance.recordVideoView(
+          widget.meal.id,
+        );
+
+        if (!mounted) return;
+
+        if (!access.allowed) {
+          setState(() {
+            _checkingVideoAccess = false;
+            _videoAccessMessage = access.message;
+          });
+
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(access.message)));
+          return;
+        }
+
+        setState(() {
+          _videoAccessAllowed = true;
+          _checkingVideoAccess = false;
+          _videoAccessMessage = access.membershipStatus == 'ACTIVE'
+              ? 'Unlimited videos enabled'
+              : '${access.remainingViews} videos remaining this month';
+        });
+      } catch (error) {
+        debugPrint('Video access error: $error');
+        if (!mounted) return;
+
+        setState(() {
+          _checkingVideoAccess = false;
+          _videoAccessMessage = 'Please login to watch this video';
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please login to watch this video')),
+        );
+        return;
+      }
+    }
+
+    final ready = await _ensureVideoReady();
+    if (!ready || !mounted) return;
+
+    await _videoController?.play();
+    if (mounted) setState(() {});
+  }
+
   Widget _buildVideoPlayer() {
-    if (_videoController.value.hasError) {
-      return Container(
-        height: 250,
-        color: Colors.black,
-        alignment: Alignment.center,
-        child: Text(
-          'Video failed to load.\n${_videoController.value.errorDescription ?? ''}',
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.white),
-        ),
+    final controller = _videoController;
+    final chewieController = _chewieController;
+
+    if (_isVideoReady && controller != null && chewieController != null) {
+      return AspectRatio(
+        aspectRatio: controller.value.aspectRatio,
+        child: Chewie(controller: chewieController),
       );
     }
 
-    if (!_isVideoReady || _chewieController == null) {
-      return const SizedBox(
-        height: 250,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        AspectRatio(
-          aspectRatio: _videoController.value.aspectRatio,
-          child: _videoAccessAllowed
-              ? Chewie(controller: _chewieController!)
-              : VideoPlayer(_videoController),
-        ),
-        if (!_videoAccessAllowed)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black45,
-              child: Center(
-                child: _checkingVideoAccess
-                    ? const CircularProgressIndicator()
-                    : FilledButton.icon(
-                        onPressed: _checkAccessAndPlay,
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('Watch & Cook'),
-                      ),
-              ),
-            ),
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (widget.meal.imageUrl.trim().isNotEmpty)
+            Image.network(
+              widget.meal.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => _videoFallback(),
+            )
+          else
+            _videoFallback(),
+          Container(color: Colors.black45),
+          Center(
+            child: (_checkingVideoAccess || _isInitialisingVideo)
+                ? const CircularProgressIndicator()
+                : FilledButton.icon(
+                    onPressed: _checkAccessAndPlay,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Watch & Cook'),
+                  ),
           ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  Widget _videoFallback() {
+    return Container(
+      color: Colors.black,
+      alignment: Alignment.center,
+      child: const Icon(Icons.restaurant_menu, size: 64, color: Colors.white70),
     );
   }
 

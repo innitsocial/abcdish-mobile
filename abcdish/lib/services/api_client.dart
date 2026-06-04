@@ -135,12 +135,22 @@ class ApiClient {
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
   }
 
-  Future<String?> getAccessToken() {
-    return _storage.read(key: _accessTokenKey);
+  Future<String?> getAccessToken() async {
+    try {
+      return await _storage.read(key: _accessTokenKey);
+    } catch (error) {
+      await clearTokens();
+      return null;
+    }
   }
 
-  Future<String?> getRefreshToken() {
-    return _storage.read(key: _refreshTokenKey);
+  Future<String?> getRefreshToken() async {
+    try {
+      return await _storage.read(key: _refreshTokenKey);
+    } catch (error) {
+      await clearTokens();
+      return null;
+    }
   }
 
   Future<void> clearTokens() async {

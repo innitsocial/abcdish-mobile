@@ -12,42 +12,61 @@ class MealVideoPlayer extends StatefulWidget {
 }
 
 class _MealVideoPlayerState extends State<MealVideoPlayer> {
-  late VideoPlayerController _videoPlayerController;
+  VideoPlayerController? _videoPlayerController;
   ChewieController? _chewieController;
 
-  bool _isLoading = true;
+  bool _isLoading = false;
   String? _errorMessage;
 
   @override
-  void initState() {
-    super.initState();
-    _setupVideoPlayer();
+  void dispose() {
+    _chewieController?.dispose();
+    _videoPlayerController?.dispose();
+    super.dispose();
   }
 
   Future<void> _setupVideoPlayer() async {
+    if (_isLoading || _chewieController != null) return;
+
+    final url = widget.videoUrl.trim();
+    if (url.isEmpty) {
+      setState(() {
+        _errorMessage = 'Video is not available.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
     try {
-      _videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(widget.videoUrl),
-      );
+      final controller = VideoPlayerController.networkUrl(Uri.parse(url));
+      await controller.initialize();
 
-      await _videoPlayerController.initialize();
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
 
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController,
-        autoPlay: false,
+      final chewieController = ChewieController(
+        videoPlayerController: controller,
+        autoPlay: true,
         looping: false,
         allowFullScreen: true,
         allowMuting: true,
         showControls: true,
-        aspectRatio: _videoPlayerController.value.aspectRatio,
+        aspectRatio: controller.value.aspectRatio,
       );
 
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _videoPlayerController = controller;
+        _chewieController = chewieController;
+        _isLoading = false;
+      });
     } catch (error) {
+      debugPrint('MealVideoPlayer error: $error');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -58,31 +77,42 @@ class _MealVideoPlayerState extends State<MealVideoPlayer> {
   }
 
   @override
-  void dispose() {
-    _chewieController?.dispose();
-    _videoPlayerController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
+    final chewieController = _chewieController;
+    final videoController = _videoPlayerController;
 
-    if (_errorMessage != null) {
+    if (chewieController != null && videoController != null) {
       return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Center(child: Text(_errorMessage!)),
+        aspectRatio: videoController.value.aspectRatio,
+        child: Chewie(controller: chewieController),
       );
     }
 
     return AspectRatio(
-      aspectRatio: _videoPlayerController.value.aspectRatio,
-      child: Chewie(controller: _chewieController!),
+      aspectRatio: 16 / 9,
+      child: Container(
+        color: Colors.black,
+        alignment: Alignment.center,
+        child: _isLoading
+            ? const CircularProgressIndicator()
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_errorMessage != null) ...[
+                    Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.white70),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  FilledButton.icon(
+                    onPressed: _setupVideoPlayer,
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Play Video'),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/auth_provider.dart';
 import 'package:abcdish/screens/forgot_password.dart';
-import 'package:abcdish/screens/oauth_login.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -282,18 +281,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
                       );
                     },
                     child: const Text('Forgot password?'),
-                  ),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const OAuthLoginScreen(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.login),
-                    label: const Text('Social login'),
                   ),
                 ],
               ),

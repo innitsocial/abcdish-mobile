@@ -15,3 +15,16 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+1. Stabilise iPhone app
+2. Fix video architecture
+3. Creator uploads
+4. S3 + CloudFront media platform
+5. Push notifications
+6. Social features (likes/comments/follow)
+7. Contest platform
+8. Admin portal
+9. Shopping integrations
+10. AI features
+11. TestFlight
+12. App Store launch

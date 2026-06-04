@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:abcdish/services/auth_service.dart';
 import 'package:flutter_riverpod/legacy.dart';
+
+import 'package:abcdish/services/auth_service.dart';
+
+const Object _unset = Object();
 
 class AuthState {
   const AuthState({
@@ -17,12 +20,14 @@ class AuthState {
   AuthState copyWith({
     bool? isLoggedIn,
     bool? isLoading,
-    String? errorMessage,
+    Object? errorMessage = _unset,
   }) {
     return AuthState(
       isLoggedIn: isLoggedIn ?? this.isLoggedIn,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: errorMessage == _unset
+          ? this.errorMessage
+          : errorMessage as String?,
     );
   }
 }
@@ -44,7 +49,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
     } catch (error) {
       debugPrint('Auth bootstrap error: $error');
-      debugPrint('REGISTER ERROR: $error');
       state = state.copyWith(
         isLoggedIn: false,
         isLoading: false,
@@ -61,7 +65,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _authService.login(identifier: identifier, password: password);
-
       state = state.copyWith(
         isLoggedIn: true,
         isLoading: false,
@@ -93,7 +96,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         mobileNumber: mobileNumber,
         password: password,
       );
-
       state = state.copyWith(
         isLoggedIn: true,
         isLoading: false,
@@ -101,6 +103,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } catch (error) {
+      debugPrint('Register error: $error');
       state = state.copyWith(
         isLoggedIn: false,
         isLoading: false,
@@ -115,13 +118,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _authService.requestEmailOtp(email);
-
       state = state.copyWith(isLoading: false, errorMessage: null);
-
       return true;
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: error.toString());
-
       return false;
     }
   }
@@ -134,7 +134,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _authService.verifyEmailOtp(email: email, otp: otp);
-
       state = state.copyWith(
         isLoggedIn: true,
         isLoading: false,
@@ -156,13 +155,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _authService.requestMobileOtp(mobileNumber);
-
       state = state.copyWith(isLoading: false, errorMessage: null);
-
       return true;
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: error.toString());
-
       return false;
     }
   }
@@ -175,7 +171,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _authService.verifyMobileOtp(mobileNumber: mobileNumber, otp: otp);
-
       state = state.copyWith(
         isLoggedIn: true,
         isLoading: false,
@@ -197,13 +192,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _authService.forgotPassword(email);
-
       state = state.copyWith(isLoading: false, errorMessage: null);
-
       return true;
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: error.toString());
-
       return false;
     }
   }
@@ -221,20 +213,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
         otp: otp,
         newPassword: newPassword,
       );
-
       state = state.copyWith(isLoading: false, errorMessage: null);
-
       return true;
     } catch (error) {
       state = state.copyWith(isLoading: false, errorMessage: error.toString());
-
       return false;
     }
   }
 
   Future<void> logout() async {
     await _authService.logout();
-
     state = state.copyWith(
       isLoggedIn: false,
       isLoading: false,
