@@ -25,8 +25,9 @@ class ApiClient {
 
   Future<dynamic> get(String path) async {
     final response = await _sendWithRefresh(
-      () async =>
-          http.get(Uri.parse('$apiBaseUrl$path'), headers: await _headers()),
+      () async => http
+          .get(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
+          .timeout(const Duration(seconds: 15)),
     );
 
     return _handleResponse(response);
@@ -48,11 +49,13 @@ class ApiClient {
 
   Future<dynamic> put(String path, {Map<String, dynamic>? body}) async {
     final response = await _sendWithRefresh(
-      () async => http.put(
-        Uri.parse('$apiBaseUrl$path'),
-        headers: await _headers(),
-        body: jsonEncode(body ?? {}),
-      ),
+      () async => http
+          .put(
+            Uri.parse('$apiBaseUrl$path'),
+            headers: await _headers(),
+            body: jsonEncode(body ?? {}),
+          )
+          .timeout(const Duration(seconds: 15)),
     );
 
     return _handleResponse(response);
@@ -60,8 +63,9 @@ class ApiClient {
 
   Future<dynamic> delete(String path) async {
     final response = await _sendWithRefresh(
-      () async =>
-          http.delete(Uri.parse('$apiBaseUrl$path'), headers: await _headers()),
+      () async => http
+          .delete(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
+          .timeout(const Duration(seconds: 15)),
     );
 
     return _handleResponse(response);
@@ -154,8 +158,12 @@ class ApiClient {
   }
 
   Future<void> clearTokens() async {
-    await _storage.delete(key: _accessTokenKey);
-    await _storage.delete(key: _refreshTokenKey);
+    try {
+      await _storage.delete(key: _accessTokenKey);
+      await _storage.delete(key: _refreshTokenKey);
+    } catch (_) {
+      // Ignore keychain cleanup failures so app startup never crashes.
+    }
   }
 
   dynamic _handleResponse(http.Response response) {

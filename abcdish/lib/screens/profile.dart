@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
+import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/login.dart';
+import 'package:abcdish/screens/oauth_login.dart';
+import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -19,6 +22,10 @@ class ProfileScreen extends ConsumerWidget {
     Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (ctx) => const RegisterScreen()));
+  }
+
+  void _open(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (ctx) => screen));
   }
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {
@@ -43,6 +50,7 @@ class ProfileScreen extends ConsumerWidget {
       return _LoggedOutProfile(
         onLogin: () => _openLogin(context),
         onRegister: () => _openRegister(context),
+        onOAuth: () => _open(context, const OAuthLoginScreen()),
       );
     }
 
@@ -58,7 +66,7 @@ class ProfileScreen extends ConsumerWidget {
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall!.copyWith(
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
+              color: colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: 8),
@@ -76,6 +84,7 @@ class ProfileScreen extends ConsumerWidget {
           return _LoggedOutProfile(
             onLogin: () => _openLogin(context),
             onRegister: () => _openRegister(context),
+            onOAuth: () => _open(context, const OAuthLoginScreen()),
           );
         }
 
@@ -101,7 +110,7 @@ class ProfileScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 8),
@@ -111,7 +120,7 @@ class ProfileScreen extends ConsumerWidget {
                   : 'Free plan: ${session.remainingViews} videos remaining this month.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+                color: colorScheme.onSurface,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -162,22 +171,24 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            if (session.features.canUploadRecipes)
-              const Card(
-                child: ListTile(
-                  leading: Icon(Icons.upload_file),
-                  title: Text('Creator tools'),
-                  subtitle: Text('Recipe upload enabled'),
-                ),
-              ),
-            if (session.features.canAccessAdmin)
-              const Card(
-                child: ListTile(
-                  leading: Icon(Icons.dashboard_customize),
-                  title: Text('Admin dashboard'),
-                  subtitle: Text('Admin access enabled'),
-                ),
-              ),
+            _ProfileTile(
+              icon: Icons.video_call,
+              title: 'Creator Studio',
+              subtitle: 'Upload recipe drafts and cooking videos',
+              onTap: () => _open(context, const CreatorUploadScreen()),
+            ),
+            _ProfileTile(
+              icon: Icons.storefront,
+              title: 'Partner Stores',
+              subtitle: 'Browse stores connected to shopping lists',
+              onTap: () => _open(context, const PartnerStoresScreen()),
+            ),
+            _ProfileTile(
+              icon: Icons.login,
+              title: 'Social Login Providers',
+              subtitle: 'Google, Apple, Facebook and Microsoft foundations',
+              onTap: () => _open(context, const OAuthLoginScreen()),
+            ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () => _logout(context, ref),
@@ -206,11 +217,43 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+class _ProfileTile extends StatelessWidget {
+  const _ProfileTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        leading: Icon(icon),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
 class _LoggedOutProfile extends StatelessWidget {
-  const _LoggedOutProfile({required this.onLogin, required this.onRegister});
+  const _LoggedOutProfile({
+    required this.onLogin,
+    required this.onRegister,
+    required this.onOAuth,
+  });
 
   final VoidCallback onLogin;
   final VoidCallback onRegister;
+  final VoidCallback onOAuth;
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +277,7 @@ class _LoggedOutProfile extends StatelessWidget {
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
             fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
+            color: colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 8),
@@ -242,7 +285,7 @@ class _LoggedOutProfile extends StatelessWidget {
           'Login to save favourites, shopping lists and watch more videos.',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -257,6 +300,12 @@ class _LoggedOutProfile extends StatelessWidget {
           onPressed: onRegister,
           icon: const Icon(Icons.person_add),
           label: const Text('Create Account'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: onOAuth,
+          icon: const Icon(Icons.alternate_email),
+          label: const Text('Social Login'),
         ),
         const SizedBox(height: 24),
         const Divider(),

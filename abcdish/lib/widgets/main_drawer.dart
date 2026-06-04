@@ -33,50 +33,63 @@ class MainDrawer extends StatelessWidget {
                 ),
                 const SizedBox(width: 18),
                 Text(
-                  'Cooking Up!',
+                  'ABCDish',
                   style: Theme.of(context).textTheme.titleLarge!.copyWith(
                     color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          ListTile(
-            leading: Icon(
-              Icons.restaurant,
-              size: 26,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            title: Text(
-              'Meals',
-              style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 24,
-              ),
-            ),
-            onTap: () {
-              onSelectScreen('meals');
-            },
+          _DrawerTile(
+            icon: Icons.dynamic_feed,
+            title: 'Food Feed',
+            onTap: () => onSelectScreen('feed'),
           ),
-          ListTile(
-            leading: Icon(
-              Icons.settings,
-              size: 26,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-            title: Text(
-              'Filters',
-              style: Theme.of(context).textTheme.titleSmall!.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 24,
-              ),
-            ),
-            onTap: () {
-              onSelectScreen('filters');
-            },
+          _DrawerTile(
+            icon: Icons.favorite,
+            title: 'Favourites',
+            onTap: () => onSelectScreen('favourites'),
+          ),
+          _DrawerTile(
+            icon: Icons.settings,
+            title: 'Filters',
+            onTap: () => onSelectScreen('filters'),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _DrawerTile extends StatelessWidget {
+  const _DrawerTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        size: 26,
+        color: Theme.of(context).colorScheme.onSurface,
+      ),
+      title: Text(
+        title,
+        style: Theme.of(context).textTheme.titleSmall!.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontSize: 20,
+        ),
+      ),
+      onTap: onTap,
     );
   }
 }

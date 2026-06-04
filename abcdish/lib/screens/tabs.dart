@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/filters_provider.dart';
 import 'package:abcdish/providers/meals_provider.dart';
+import 'package:abcdish/screens/contests.dart';
 import 'package:abcdish/screens/filters.dart';
+import 'package:abcdish/screens/food_feed.dart';
 import 'package:abcdish/screens/home.dart';
 import 'package:abcdish/screens/meals.dart';
 import 'package:abcdish/screens/profile.dart';
@@ -37,6 +39,18 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         MaterialPageRoute(builder: (ctx) => const FiltersScreen()),
       );
     }
+
+    if (identifier == 'favourites') {
+      setState(() {
+        _selectedPageIndex = 3;
+      });
+    }
+
+    if (identifier == 'feed') {
+      setState(() {
+        _selectedPageIndex = 0;
+      });
+    }
   }
 
   @override
@@ -49,36 +63,45 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
       error: (error, stackTrace) => Scaffold(
         body: Center(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: Text(
-              'Failed to load recipes. Please check backend is running.\n\n$error',
+              'Failed to load recipes. Please check the backend.\n\n$error',
               textAlign: TextAlign.center,
             ),
           ),
         ),
       ),
       data: (availableMeals) {
-        Widget activePage = HomeScreen(availableMeals: availableMeals);
-        var activePageTitle = 'ABCDish';
+        Widget activePage = const FoodFeedScreen();
+        var activePageTitle = 'Food Feed';
 
         if (_selectedPageIndex == 1) {
+          activePage = HomeScreen(availableMeals: availableMeals);
+          activePageTitle = 'Recipes';
+        }
+
+        if (_selectedPageIndex == 2) {
           activePage = SearchScreen(availableMeals: availableMeals);
           activePageTitle = 'Search';
         }
 
-        if (_selectedPageIndex == 2) {
+        if (_selectedPageIndex == 3) {
           final favoriteMeals = ref.watch(favoriteMealsProvider);
-
           activePage = MealsScreen(meals: favoriteMeals);
-          activePageTitle = 'Your Favourites';
+          activePageTitle = 'Favourites';
         }
 
-        if (_selectedPageIndex == 3) {
+        if (_selectedPageIndex == 4) {
+          activePage = const ContestsScreen();
+          activePageTitle = 'Contests';
+        }
+
+        if (_selectedPageIndex == 5) {
           activePage = const ShoppingListScreen();
           activePageTitle = 'Shopping List';
         }
 
-        if (_selectedPageIndex == 4) {
+        if (_selectedPageIndex == 6) {
           activePage = const ProfileScreen();
           activePageTitle = 'Profile';
         }

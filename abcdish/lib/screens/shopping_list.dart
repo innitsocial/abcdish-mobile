@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/shopping_list_provider.dart';
+import 'package:abcdish/screens/partner_stores.dart';
 
 class ShoppingListScreen extends ConsumerWidget {
   const ShoppingListScreen({super.key});
@@ -54,6 +55,23 @@ class ShoppingListScreen extends ConsumerWidget {
             ],
           ),
         ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (ctx) => const PartnerStoresScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.storefront),
+              label: const Text('Find Partner Stores'),
+            ),
+          ),
+        ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -84,24 +102,14 @@ class ShoppingListScreen extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: Icon(
-                      Icons.shopping_basket,
+                      Icons.shopping_basket_outlined,
                       color: colorScheme.primary,
                     ),
                     title: Text(
                       item,
-                      style: TextStyle(
-                        color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(color: colorScheme.onSurface),
                     ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () {
-                        ref
-                            .read(shoppingListProvider.notifier)
-                            .removeIngredient(item);
-                      },
-                    ),
+                    trailing: const Icon(Icons.drag_handle),
                   ),
                 ),
               );

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:abcdish/services/shopping_list_service.dart';
+
 class ShoppingListNotifier extends StateNotifier<List<String>> {
   ShoppingListNotifier() : super([]) {
     _loadShoppingList();
@@ -30,6 +32,7 @@ class ShoppingListNotifier extends StateNotifier<List<String>> {
 
     state = [...state, cleanedIngredient];
     _saveShoppingList();
+    ShoppingListService.instance.addItem(cleanedIngredient).catchError((_) {});
   }
 
   void addIngredients(List<String> ingredients) {
@@ -42,6 +45,9 @@ class ShoppingListNotifier extends StateNotifier<List<String>> {
 
       if (!updatedList.contains(cleanedIngredient)) {
         updatedList.add(cleanedIngredient);
+        ShoppingListService.instance
+            .addItem(cleanedIngredient)
+            .catchError((_) {});
       }
     }
 
