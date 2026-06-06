@@ -7,32 +7,23 @@ class AuthService {
 
   final ApiClient _apiClient = ApiClient.instance;
 
-  Future<void> login({
-    required String identifier,
-    required String password,
+  Future<void> requestRegisterEmailOtp({
+    required String name,
+    required String email,
   }) async {
-    final response = await _apiClient.post(
-      '/api/auth/login',
-      body: {'identifier': identifier, 'password': password},
+    await _apiClient.post(
+      '/api/auth/register/email/request-otp',
+      body: {'name': name, 'email': email},
     );
-
-    await _saveAuthResponse(response);
   }
 
-  Future<void> register({
-    required String name,
-    String? email,
-    String? mobileNumber,
-    String? password,
+  Future<void> verifyRegisterEmailOtp({
+    required String email,
+    required String otp,
   }) async {
     final response = await _apiClient.post(
-      '/api/auth/register',
-      body: {
-        'name': name,
-        'email': email,
-        'mobileNumber': mobileNumber,
-        'password': password,
-      },
+      '/api/auth/register/email/verify-otp',
+      body: {'destination': email, 'otp': otp},
     );
 
     await _saveAuthResponse(response);
@@ -55,40 +46,6 @@ class AuthService {
     );
 
     await _saveAuthResponse(response);
-  }
-
-  Future<void> requestMobileOtp(String mobileNumber) async {
-    await _apiClient.post(
-      '/api/auth/mobile/request-otp',
-      body: {'destination': mobileNumber},
-    );
-  }
-
-  Future<void> verifyMobileOtp({
-    required String mobileNumber,
-    required String otp,
-  }) async {
-    final response = await _apiClient.post(
-      '/api/auth/mobile/verify-otp',
-      body: {'destination': mobileNumber, 'otp': otp},
-    );
-
-    await _saveAuthResponse(response);
-  }
-
-  Future<void> forgotPassword(String email) async {
-    await _apiClient.post('/api/auth/forgot-password', body: {'email': email});
-  }
-
-  Future<void> resetPassword({
-    required String email,
-    required String otp,
-    required String newPassword,
-  }) async {
-    await _apiClient.post(
-      '/api/auth/reset-password',
-      body: {'email': email, 'otp': otp, 'newPassword': newPassword},
-    );
   }
 
   Future<void> refreshToken() async {

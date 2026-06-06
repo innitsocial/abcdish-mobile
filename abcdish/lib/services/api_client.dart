@@ -23,6 +23,14 @@ class ApiClient {
     };
   }
 
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await getAccessToken();
+
+    return {
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
   Future<dynamic> get(String path) async {
     final response = await _sendWithRefresh(
       () async => http
@@ -43,6 +51,31 @@ class ApiClient {
           )
           .timeout(const Duration(seconds: 15)),
     );
+
+    return _handleResponse(response);
+  }
+
+  Future<dynamic> uploadFile(
+    String path, {
+    required String fieldName,
+    required String filePath,
+  }) async {
+    Future<http.Response> send() async {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$apiBaseUrl$path'),
+      );
+
+      request.headers.addAll(await _authHeaders());
+      request.files.add(await http.MultipartFile.fromPath(fieldName, filePath));
+
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 120),
+      );
+      return http.Response.fromStream(streamedResponse);
+    }
+
+    final response = await _sendWithRefresh(send);
 
     return _handleResponse(response);
   }

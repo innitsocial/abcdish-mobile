@@ -5,7 +5,6 @@ import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
 import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/login.dart';
-import 'package:abcdish/screens/oauth_login.dart';
 import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
 
@@ -50,7 +49,6 @@ class ProfileScreen extends ConsumerWidget {
       return _LoggedOutProfile(
         onLogin: () => _openLogin(context),
         onRegister: () => _openRegister(context),
-        onOAuth: () => _open(context, const OAuthLoginScreen()),
       );
     }
 
@@ -84,7 +82,6 @@ class ProfileScreen extends ConsumerWidget {
           return _LoggedOutProfile(
             onLogin: () => _openLogin(context),
             onRegister: () => _openRegister(context),
-            onOAuth: () => _open(context, const OAuthLoginScreen()),
           );
         }
 
@@ -157,8 +154,7 @@ class ProfileScreen extends ConsumerWidget {
                 leading: const Icon(Icons.verified_user_outlined),
                 title: const Text('Account verification'),
                 subtitle: Text(
-                  'Email: ${session.emailVerified ? "Verified" : "Not verified"}\n'
-                  'Mobile: ${session.mobileVerified ? "Verified" : "Not verified"}',
+                  'Email: ${session.emailVerified ? "Verified" : "Not verified"}',
                 ),
               ),
             ),
@@ -182,12 +178,6 @@ class ProfileScreen extends ConsumerWidget {
               title: 'Partner Stores',
               subtitle: 'Browse stores connected to shopping lists',
               onTap: () => _open(context, const PartnerStoresScreen()),
-            ),
-            _ProfileTile(
-              icon: Icons.login,
-              title: 'Social Login Providers',
-              subtitle: 'Google, Apple, Facebook and Microsoft foundations',
-              onTap: () => _open(context, const OAuthLoginScreen()),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
@@ -245,15 +235,10 @@ class _ProfileTile extends StatelessWidget {
 }
 
 class _LoggedOutProfile extends StatelessWidget {
-  const _LoggedOutProfile({
-    required this.onLogin,
-    required this.onRegister,
-    required this.onOAuth,
-  });
+  const _LoggedOutProfile({required this.onLogin, required this.onRegister});
 
   final VoidCallback onLogin;
   final VoidCallback onRegister;
-  final VoidCallback onOAuth;
 
   @override
   Widget build(BuildContext context) {
@@ -300,12 +285,6 @@ class _LoggedOutProfile extends StatelessWidget {
           onPressed: onRegister,
           icon: const Icon(Icons.person_add),
           label: const Text('Create Account'),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: onOAuth,
-          icon: const Icon(Icons.alternate_email),
-          label: const Text('Social Login'),
         ),
         const SizedBox(height: 24),
         const Divider(),

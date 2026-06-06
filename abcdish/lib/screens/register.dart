@@ -15,13 +15,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   String _name = '';
   String _email = '';
-  String _mobileNumber = '';
-  String _password = '';
+  String _otp = '';
+  bool _otpRequested = false;
 
-  bool _useEmail = true;
-  bool _useMobile = false;
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
 
-  Future<void> _submit() async {
+  Future<void> _requestOtp() async {
     final isValid = _formKey.currentState!.validate();
     if (!isValid) return;
 
@@ -29,29 +33,39 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     final success = await ref
         .read(authProvider.notifier)
-        .register(
-          name: _name,
-          email: _useEmail ? _email : null,
-          mobileNumber: _useMobile ? _mobileNumber : null,
-          password: _useEmail ? _password : null,
-        );
+        .requestRegisterEmailOtp(name: _name, email: _email);
 
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account created successfully')),
+      setState(() {
+        _otpRequested = true;
+      });
+      _showMessage('Email code sent');
+    } else {
+      _showMessage(
+        ref.read(authProvider).errorMessage ?? 'Could not send code',
       );
+    }
+  }
 
+  Future<void> _verifyOtp() async {
+    final isValid = _formKey.currentState!.validate();
+    if (!isValid) return;
+
+    _formKey.currentState!.save();
+
+    final success = await ref
+        .read(authProvider.notifier)
+        .verifyRegisterEmailOtp(email: _email, otp: _otp);
+
+    if (!mounted) return;
+
+    if (success) {
+      _showMessage('Account created successfully');
       Navigator.of(context).pop();
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            ref.read(authProvider).errorMessage ?? 'Registration failed',
-          ),
-        ),
-      );
+      _showMessage(ref.read(authProvider).errorMessage ?? 'Invalid code');
     }
   }
 
@@ -62,175 +76,150 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Create Account')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.person_add_alt_1,
-                      size: 56,
-                      color: colorScheme.primary,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Join ABCDish',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create your account using email, mobile, or both.',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      decoration: const InputDecoration(
-                        labelText: 'Full name',
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                      textInputAction: TextInputAction.next,
-                      validator: (value) {
-                        if (value == null || value.trim().length < 2) {
-                          return 'Enter your name';
-                        }
-
-                        return null;
-                      },
-                      onSaved: (value) {
-                        _name = value!.trim();
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      value: _useEmail,
-                      title: const Text('Use email'),
-                      subtitle: const Text(
-                        'Recommended for password login and recovery',
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _useEmail = value;
-                          if (!_useEmail && !_useMobile) {
-                            _useMobile = true;
-                          }
-                        });
-                      },
-                    ),
-                    if (_useEmail) ...[
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.person_add_alt_1,
+                          size: 56,
+                          color: colorScheme.primary,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        textInputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (!_useEmail) return null;
-
-                          if (value == null ||
-                              value.trim().isEmpty ||
-                              !value.contains('@')) {
-                            return 'Enter a valid email address';
-                          }
-
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _email = value?.trim() ?? '';
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock_outline),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Join ABCDish',
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
-                        obscureText: true,
-                        textInputAction: TextInputAction.next,
-                        validator: (value) {
-                          if (!_useEmail) return null;
-
-                          if (value == null || value.trim().length < 6) {
-                            return 'Password must be at least 6 characters';
-                          }
-
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _password = value?.trim() ?? '';
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    SwitchListTile(
-                      value: _useMobile,
-                      title: const Text('Use mobile number'),
-                      subtitle: const Text(
-                        'Useful for OTP login and account recovery',
-                      ),
-                      onChanged: (value) {
-                        setState(() {
-                          _useMobile = value;
-                          if (!_useEmail && !_useMobile) {
-                            _useEmail = true;
-                          }
-                        });
-                      },
-                    ),
-                    if (_useMobile) ...[
-                      const SizedBox(height: 8),
-                      TextFormField(
-                        decoration: const InputDecoration(
-                          labelText: 'Mobile number',
-                          hintText: '+447123456789',
-                          prefixIcon: Icon(Icons.phone_outlined),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Create your account with your name and email code.',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.done,
-                        validator: (value) {
-                          if (!_useMobile) return null;
-
-                          if (value == null || value.trim().length < 8) {
-                            return 'Enter a valid mobile number';
-                          }
-
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _mobileNumber = value?.trim() ?? '';
-                        },
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: authState.isLoading ? null : _submit,
-                        child: authState.isLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text('Create Account'),
-                      ),
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          initialValue: _name,
+                          decoration: const InputDecoration(
+                            labelText: 'Full name',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          textInputAction: TextInputAction.next,
+                          enabled: !_otpRequested,
+                          validator: (value) {
+                            if (value == null || value.trim().length < 2) {
+                              return 'Enter your full name';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            _name = value!.trim();
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          initialValue: _email,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          textInputAction: _otpRequested
+                              ? TextInputAction.next
+                              : TextInputAction.done,
+                          enabled: !_otpRequested,
+                          validator: (value) {
+                            if (value == null ||
+                                value.trim().isEmpty ||
+                                !value.contains('@')) {
+                              return 'Enter a valid email address';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            _email = value!.trim();
+                          },
+                          onFieldSubmitted: (_) {
+                            if (!authState.isLoading && !_otpRequested) {
+                              _requestOtp();
+                            }
+                          },
+                        ),
+                        if (_otpRequested) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            decoration: const InputDecoration(
+                              labelText: '6-digit code',
+                              prefixIcon: Icon(Icons.pin_outlined),
+                            ),
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.done,
+                            validator: (value) {
+                              if (value == null || value.trim().length != 6) {
+                                return 'Enter the 6-digit code';
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _otp = value!.trim();
+                            },
+                            onFieldSubmitted: (_) {
+                              if (!authState.isLoading) {
+                                _verifyOtp();
+                              }
+                            },
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton.icon(
+                            onPressed: authState.isLoading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _otpRequested = false;
+                                      _otp = '';
+                                    });
+                                  },
+                            icon: const Icon(Icons.edit_outlined),
+                            label: const Text('Edit details'),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: FilledButton(
+                            onPressed: authState.isLoading
+                                ? null
+                                : _otpRequested
+                                ? _verifyOtp
+                                : _requestOtp,
+                            child: Text(
+                              _otpRequested
+                                  ? 'Verify & Create Account'
+                                  : 'Send Code',
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+          if (authState.isLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.25),
+              child: const Center(child: CircularProgressIndicator()),
+            ),
+        ],
       ),
     );
   }

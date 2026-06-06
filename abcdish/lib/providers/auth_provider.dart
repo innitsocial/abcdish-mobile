@@ -57,45 +57,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> login({
-    required String identifier,
-    required String password,
+  Future<bool> requestRegisterEmailOtp({
+    required String name,
+    required String email,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      await _authService.login(identifier: identifier, password: password);
-      state = state.copyWith(
-        isLoggedIn: true,
-        isLoading: false,
-        errorMessage: null,
-      );
+      await _authService.requestRegisterEmailOtp(name: name, email: email);
+      state = state.copyWith(isLoading: false, errorMessage: null);
       return true;
     } catch (error) {
-      state = state.copyWith(
-        isLoggedIn: false,
-        isLoading: false,
-        errorMessage: error.toString(),
-      );
+      debugPrint('Register email OTP request error: $error');
+      state = state.copyWith(isLoading: false, errorMessage: error.toString());
       return false;
     }
   }
 
-  Future<bool> register({
-    required String name,
-    String? email,
-    String? mobileNumber,
-    String? password,
+  Future<bool> verifyRegisterEmailOtp({
+    required String email,
+    required String otp,
   }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      await _authService.register(
-        name: name,
-        email: email,
-        mobileNumber: mobileNumber,
-        password: password,
-      );
+      await _authService.verifyRegisterEmailOtp(email: email, otp: otp);
       state = state.copyWith(
         isLoggedIn: true,
         isLoading: false,
@@ -103,7 +89,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } catch (error) {
-      debugPrint('Register error: $error');
+      debugPrint('Register email OTP verify error: $error');
       state = state.copyWith(
         isLoggedIn: false,
         isLoading: false,
@@ -146,77 +132,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
         errorMessage: error.toString(),
       );
-      return false;
-    }
-  }
-
-  Future<bool> requestMobileOtp(String mobileNumber) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-
-    try {
-      await _authService.requestMobileOtp(mobileNumber);
-      state = state.copyWith(isLoading: false, errorMessage: null);
-      return true;
-    } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: error.toString());
-      return false;
-    }
-  }
-
-  Future<bool> verifyMobileOtp({
-    required String mobileNumber,
-    required String otp,
-  }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-
-    try {
-      await _authService.verifyMobileOtp(mobileNumber: mobileNumber, otp: otp);
-      state = state.copyWith(
-        isLoggedIn: true,
-        isLoading: false,
-        errorMessage: null,
-      );
-      return true;
-    } catch (error) {
-      state = state.copyWith(
-        isLoggedIn: false,
-        isLoading: false,
-        errorMessage: error.toString(),
-      );
-      return false;
-    }
-  }
-
-  Future<bool> forgotPassword(String email) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-
-    try {
-      await _authService.forgotPassword(email);
-      state = state.copyWith(isLoading: false, errorMessage: null);
-      return true;
-    } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: error.toString());
-      return false;
-    }
-  }
-
-  Future<bool> resetPassword({
-    required String email,
-    required String otp,
-    required String newPassword,
-  }) async {
-    state = state.copyWith(isLoading: true, errorMessage: null);
-
-    try {
-      await _authService.resetPassword(
-        email: email,
-        otp: otp,
-        newPassword: newPassword,
-      );
-      state = state.copyWith(isLoading: false, errorMessage: null);
-      return true;
-    } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: error.toString());
       return false;
     }
   }

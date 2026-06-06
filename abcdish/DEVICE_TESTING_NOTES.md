@@ -15,7 +15,7 @@
 
 ```bash
 flutter clean
-rm -rf ios/Pods ios/Podfile.lock ios/.symlinks
+rm -rf ios/Pods ios/Podfile.lock ios/.symlinks ios/Flutter/ephemeral
 rm -rf ~/Library/Developer/Xcode/DerivedData
 flutter pub get
 cd ios

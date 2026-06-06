@@ -22,6 +22,14 @@ class Meal {
     required this.isVegan,
     required this.isVegetarian,
     required this.color,
+    this.sourceType = 'RECIPE',
+    this.creatorKey = 'abcdish',
+    this.creatorName = 'ABCDish Kitchen',
+    this.likeCount = 0,
+    this.commentCount = 0,
+    this.shareCount = 0,
+    this.likedByCurrentUser = false,
+    this.followedByCurrentUser = false,
   });
 
   final String id;
@@ -60,9 +68,25 @@ class Meal {
 
   final Color color;
 
+  final String sourceType;
+
+  final String creatorKey;
+
+  final String creatorName;
+
+  final int likeCount;
+
+  final int commentCount;
+
+  final int shareCount;
+
+  final bool likedByCurrentUser;
+
+  final bool followedByCurrentUser;
+
   factory Meal.fromJson(Map<String, dynamic> json) {
     return Meal(
-      id: json['id'].toString(),
+      id: (json['id'] ?? json['mealId']).toString(),
       categories: List<String>.from(json['categories'] ?? []),
       title: json['title'] ?? '',
       imageUrl: json['imageUrl'] ?? '',
@@ -84,6 +108,14 @@ class Meal {
       isVegan: json['vegan'] ?? false,
       isVegetarian: json['vegetarian'] ?? false,
       color: Colors.orange,
+      sourceType: json['sourceType'] ?? 'RECIPE',
+      creatorKey: json['creatorKey'] ?? 'abcdish',
+      creatorName: json['creatorName'] ?? 'ABCDish Kitchen',
+      likeCount: json['likeCount'] ?? 0,
+      commentCount: json['commentCount'] ?? 0,
+      shareCount: json['shareCount'] ?? 0,
+      likedByCurrentUser: json['likedByCurrentUser'] ?? false,
+      followedByCurrentUser: json['followedByCurrentUser'] ?? false,
     );
   }
 }

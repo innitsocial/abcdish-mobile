@@ -20,9 +20,11 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
     _formKey.currentState!.save();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(
-          'Creator upload UI is ready. S3 upload integration is the next backend step.',
+          '"$_title" draft saved as $_mediaType. Media links: '
+          '${_imageUrl.isEmpty && _videoUrl.isEmpty ? "pending" : "attached"}. '
+          '${_description.isEmpty ? "Description pending." : "Description added."}',
         ),
       ),
     );

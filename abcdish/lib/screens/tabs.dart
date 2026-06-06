@@ -72,39 +72,18 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         ),
       ),
       data: (availableMeals) {
-        Widget activePage = const FoodFeedScreen();
-        var activePageTitle = 'Food Feed';
+        final pages = [
+          ('Food Feed', const FoodFeedScreen()),
+          ('Recipes', HomeScreen(availableMeals: availableMeals)),
+          ('Search', SearchScreen(availableMeals: availableMeals)),
+          ('Favourites', MealsScreen(meals: ref.watch(favoriteMealsProvider))),
+          ('Contests', const ContestsScreen()),
+          ('Shopping List', const ShoppingListScreen()),
+          ('Profile', const ProfileScreen()),
+        ];
 
-        if (_selectedPageIndex == 1) {
-          activePage = HomeScreen(availableMeals: availableMeals);
-          activePageTitle = 'Recipes';
-        }
-
-        if (_selectedPageIndex == 2) {
-          activePage = SearchScreen(availableMeals: availableMeals);
-          activePageTitle = 'Search';
-        }
-
-        if (_selectedPageIndex == 3) {
-          final favoriteMeals = ref.watch(favoriteMealsProvider);
-          activePage = MealsScreen(meals: favoriteMeals);
-          activePageTitle = 'Favourites';
-        }
-
-        if (_selectedPageIndex == 4) {
-          activePage = const ContestsScreen();
-          activePageTitle = 'Contests';
-        }
-
-        if (_selectedPageIndex == 5) {
-          activePage = const ShoppingListScreen();
-          activePageTitle = 'Shopping List';
-        }
-
-        if (_selectedPageIndex == 6) {
-          activePage = const ProfileScreen();
-          activePageTitle = 'Profile';
-        }
+        final activePageTitle = pages[_selectedPageIndex].$1;
+        final activePage = pages[_selectedPageIndex].$2;
 
         return Scaffold(
           appBar: AppBar(title: Text(activePageTitle)),
