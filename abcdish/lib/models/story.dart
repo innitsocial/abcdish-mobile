@@ -9,6 +9,8 @@ class Story {
     required this.videoUrl,
     required this.createdAt,
     required this.expiresAt,
+    this.contestEntryId,
+    this.promotedVideoTitle = '',
     this.moderationStatus = 'APPROVED',
     this.moderationReason = '',
     this.viewCount = 0,
@@ -25,6 +27,8 @@ class Story {
   final String videoUrl;
   final DateTime createdAt;
   final DateTime expiresAt;
+  final String? contestEntryId;
+  final String promotedVideoTitle;
   final String moderationStatus;
   final String moderationReason;
   final int viewCount;
@@ -42,6 +46,8 @@ class Story {
       creatorName: json['creatorName'] ?? 'ABCDish Creator',
       imageUrl: json['imageUrl'] ?? '',
       videoUrl: json['videoUrl'] ?? '',
+      contestEntryId: json['contestEntryId']?.toString(),
+      promotedVideoTitle: json['promotedVideoTitle']?.toString() ?? '',
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime.now(),
@@ -67,6 +73,8 @@ class Story {
       videoUrl: videoUrl,
       createdAt: createdAt,
       expiresAt: expiresAt,
+      contestEntryId: contestEntryId,
+      promotedVideoTitle: promotedVideoTitle,
       moderationStatus: moderationStatus,
       moderationReason: moderationReason,
       viewCount: viewCount ?? this.viewCount,

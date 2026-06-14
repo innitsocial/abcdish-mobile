@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:abcdish/config/app_config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiClient {
   ApiClient._internal();
@@ -13,22 +14,34 @@ class ApiClient {
 
   static const _accessTokenKey = 'access_token';
   static const _refreshTokenKey = 'refresh_token';
+  static const _languageStorageKey = 'app_language';
 
   Future<Map<String, String>> _headers() async {
     final token = await getAccessToken();
+    final languageCode = await _languageCode();
 
     return {
       'Content-Type': 'application/json',
+      'Accept-Language': languageCode,
+      'X-ABCDish-Language': languageCode,
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }
 
   Future<Map<String, String>> _authHeaders() async {
     final token = await getAccessToken();
+    final languageCode = await _languageCode();
 
     return {
+      'Accept-Language': languageCode,
+      'X-ABCDish-Language': languageCode,
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
+  }
+
+  Future<String> _languageCode() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_languageStorageKey) ?? 'en';
   }
 
   Future<dynamic> get(

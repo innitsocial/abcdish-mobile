@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/models/category.dart';
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/categories_provider.dart';
@@ -22,18 +23,20 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(categoriesProvider);
+    final text = ref.watch(appTextProvider);
 
     return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) =>
-          Center(child: Text('Failed to load categories: $error')),
+      error: (error, stackTrace) => Center(
+        child: Text('${text.raw('Failed to load categories')}: $error'),
+      ),
       data: (categories) {
         if (availableMeals.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Text(
-                'No recipes match these filters.',
+                text.raw('No recipes match these filters.'),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -46,13 +49,15 @@ class HomeScreen extends ConsumerWidget {
           children: [
             _FeaturedRecipe(
               meal: featuredMeal,
+              featuredLabel: text.raw('Featured Recipe'),
+              watchLabel: text.raw('Watch & Cook'),
               onSelectMeal: () {
                 _selectMeal(context, featuredMeal);
               },
             ),
             _MealSection(
-              title: 'Popular Recipes',
-              subtitle: 'Start cooking something delicious today',
+              title: text.raw('Popular Recipes'),
+              subtitle: text.raw('Start cooking something delicious today'),
               meals: availableMeals,
               onSelectMeal: (meal) {
                 _selectMeal(context, meal);
@@ -61,7 +66,7 @@ class HomeScreen extends ConsumerWidget {
             for (final category in categories)
               _MealSection(
                 title: category.title,
-                subtitle: 'Explore ${category.title} recipes',
+                subtitle: '${text.raw('Explore')} ${category.title}',
                 meals: _mealsForCategory(availableMeals, category),
                 onSelectMeal: (meal) {
                   _selectMeal(context, meal);
@@ -82,9 +87,16 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _FeaturedRecipe extends StatelessWidget {
-  const _FeaturedRecipe({required this.meal, required this.onSelectMeal});
+  const _FeaturedRecipe({
+    required this.meal,
+    required this.featuredLabel,
+    required this.watchLabel,
+    required this.onSelectMeal,
+  });
 
   final Meal meal;
+  final String featuredLabel;
+  final String watchLabel;
   final VoidCallback onSelectMeal;
 
   @override
@@ -124,7 +136,7 @@ class _FeaturedRecipe extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Featured Recipe',
+                  featuredLabel,
                   style: Theme.of(
                     context,
                   ).textTheme.labelLarge!.copyWith(color: Colors.white70),
@@ -150,7 +162,7 @@ class _FeaturedRecipe extends StatelessWidget {
                 FilledButton.icon(
                   onPressed: onSelectMeal,
                   icon: const Icon(Icons.play_arrow),
-                  label: const Text('Watch & Cook'),
+                  label: Text(watchLabel),
                 ),
               ],
             ),

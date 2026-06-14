@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class AppBottomNav extends StatelessWidget {
+import 'package:abcdish/l10n/app_text.dart';
+
+class AppBottomNav extends ConsumerWidget {
   const AppBottomNav({
     super.key,
     required this.currentIndex,
@@ -11,46 +14,48 @@ class AppBottomNav extends StatelessWidget {
   final void Function(int index) onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = ref.watch(appTextProvider);
+
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: onTap,
       labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-      destinations: const [
+      destinations: [
         NavigationDestination(
-          icon: Icon(Icons.dynamic_feed_outlined),
-          selectedIcon: Icon(Icons.dynamic_feed),
-          label: 'Feed',
+          icon: const Icon(Icons.dynamic_feed_outlined),
+          selectedIcon: const Icon(Icons.dynamic_feed),
+          label: text.feed,
         ),
         NavigationDestination(
-          icon: Icon(Icons.restaurant_menu_outlined),
-          selectedIcon: Icon(Icons.restaurant_menu),
-          label: 'Recipes',
+          icon: const Icon(Icons.restaurant_menu_outlined),
+          selectedIcon: const Icon(Icons.restaurant_menu),
+          label: text.recipes,
         ),
         NavigationDestination(
-          icon: Icon(Icons.search_outlined),
-          selectedIcon: Icon(Icons.search),
-          label: 'Search',
+          icon: const Icon(Icons.search_outlined),
+          selectedIcon: const Icon(Icons.search),
+          label: text.search,
         ),
         NavigationDestination(
-          icon: Icon(Icons.bookmark_border),
-          selectedIcon: Icon(Icons.bookmark),
-          label: 'Saved',
+          icon: const Icon(Icons.bookmark_border),
+          selectedIcon: const Icon(Icons.bookmark),
+          label: text.saved,
         ),
         NavigationDestination(
-          icon: Icon(Icons.emoji_events_outlined),
-          selectedIcon: Icon(Icons.emoji_events),
-          label: 'Contests',
+          icon: const Icon(Icons.emoji_events_outlined),
+          selectedIcon: const Icon(Icons.emoji_events),
+          label: text.contests,
         ),
         NavigationDestination(
-          icon: Icon(Icons.shopping_cart_outlined),
-          selectedIcon: Icon(Icons.shopping_cart),
-          label: 'Shopping',
+          icon: const Icon(Icons.shopping_cart_outlined),
+          selectedIcon: const Icon(Icons.shopping_cart),
+          label: text.shopping,
         ),
         NavigationDestination(
-          icon: Icon(Icons.person_outline),
-          selectedIcon: Icon(Icons.person),
-          label: 'Profile',
+          icon: const Icon(Icons.person_outline),
+          selectedIcon: const Icon(Icons.person),
+          label: text.profile,
         ),
       ],
     );

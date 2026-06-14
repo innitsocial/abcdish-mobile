@@ -35,6 +35,15 @@ class Meal {
     this.shareCount = 0,
     this.likedByCurrentUser = false,
     this.followedByCurrentUser = false,
+    this.contestId,
+    this.acceptanceThreshold = 0,
+    this.acceptedMealId,
+    this.reviewUnlocked = false,
+    this.competitionCategory = 'admin',
+    this.competitionStatus = 'OFFICIAL_RECIPE',
+    this.finalistRank,
+    this.londonQualified = false,
+    this.prizeAmountGbp,
     this.moderationStatus = 'APPROVED',
     this.moderationReason = '',
   });
@@ -102,6 +111,24 @@ class Meal {
 
   final bool followedByCurrentUser;
 
+  final String? contestId;
+
+  final int acceptanceThreshold;
+
+  final String? acceptedMealId;
+
+  final bool reviewUnlocked;
+
+  final String competitionCategory;
+
+  final String competitionStatus;
+
+  final int? finalistRank;
+
+  final bool londonQualified;
+
+  final int? prizeAmountGbp;
+
   final String moderationStatus;
 
   final String moderationReason;
@@ -148,8 +175,35 @@ class Meal {
       shareCount: json['shareCount'] ?? 0,
       likedByCurrentUser: json['likedByCurrentUser'] ?? false,
       followedByCurrentUser: json['followedByCurrentUser'] ?? false,
+      contestId: json['contestId']?.toString(),
+      acceptanceThreshold: _intFromJson(json['acceptanceThreshold']),
+      acceptedMealId: json['acceptedMealId']?.toString(),
+      reviewUnlocked: json['reviewUnlocked'] ?? false,
+      competitionCategory:
+          json['competitionCategory']?.toString() ??
+          (json['sourceType'] == 'CONTEST_ENTRY' ? 'main' : 'admin'),
+      competitionStatus:
+          json['competitionStatus']?.toString() ??
+          (json['sourceType'] == 'CONTEST_ENTRY'
+              ? 'VOTING'
+              : 'OFFICIAL_RECIPE'),
+      finalistRank: json['finalistRank'] == null
+          ? null
+          : _intFromJson(json['finalistRank']),
+      londonQualified: json['londonQualified'] == true,
+      prizeAmountGbp: json['prizeAmountGbp'] == null
+          ? null
+          : _intFromJson(json['prizeAmountGbp']),
       moderationStatus: json['moderationStatus'] ?? 'APPROVED',
       moderationReason: json['moderationReason'] ?? '',
     );
+  }
+
+  bool get isContestEntry => sourceType == 'CONTEST_ENTRY';
+
+  static int _intFromJson(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }

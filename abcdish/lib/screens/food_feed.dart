@@ -14,6 +14,7 @@ import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/feed_provider.dart';
 import 'package:abcdish/screens/create_story.dart';
 import 'package:abcdish/screens/meal_details.dart';
+import 'package:abcdish/services/contest_service.dart';
 import 'package:abcdish/services/safety_service.dart';
 import 'package:abcdish/services/social_service.dart';
 import 'package:abcdish/services/story_service.dart';
@@ -101,7 +102,13 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
     if (!canContinue) return;
 
     try {
-      if (meal.likedByCurrentUser) {
+      if (meal.isContestEntry) {
+        if (meal.likedByCurrentUser) {
+          await ContestService.instance.unlikeEntry(meal.id);
+        } else {
+          await ContestService.instance.likeEntry(meal.id);
+        }
+      } else if (meal.likedByCurrentUser) {
         await SocialService.instance.unlikeMeal(meal.id);
       } else {
         await SocialService.instance.likeMeal(meal.id);
@@ -114,6 +121,8 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
   }
 
   Future<void> _toggleFollow(Meal meal) async {
+    if (meal.isContestEntry) return;
+
     final canContinue = await ensureLoggedIn(context, ref);
     if (!canContinue) return;
 
@@ -131,6 +140,8 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
   }
 
   Future<void> _shareMeal(Meal meal) async {
+    if (meal.isContestEntry) return;
+
     final canContinue = await ensureLoggedIn(context, ref);
     if (!canContinue) return;
 
@@ -148,6 +159,8 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
   }
 
   Future<void> _hideCreator(Meal meal) async {
+    if (meal.isContestEntry) return;
+
     final prefs = await SharedPreferences.getInstance();
 
     setState(() {
@@ -193,22 +206,23 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.flag_outlined),
-              title: const Text('Report post'),
+              title: Text(meal.isContestEntry ? 'Report entry' : 'Report post'),
               subtitle: const Text('Spam, unsafe, abusive, or inappropriate'),
               onTap: () {
                 Navigator.of(context).pop();
                 _showReportReasons(meal);
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.visibility_off_outlined),
-              title: Text('Hide ${_creatorName(meal)}'),
-              subtitle: const Text('Remove this creator from your feed'),
-              onTap: () {
-                Navigator.of(context).pop();
-                _hideCreator(meal);
-              },
-            ),
+            if (!meal.isContestEntry)
+              ListTile(
+                leading: const Icon(Icons.visibility_off_outlined),
+                title: Text('Hide ${_creatorName(meal)}'),
+                subtitle: const Text('Remove this creator from your feed'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _hideCreator(meal);
+                },
+              ),
           ],
         ),
       ),
@@ -509,8 +523,12 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
                     shareCount: meal.shareCount,
                     onOpenMeal: () => _openMeal(meal),
                     onLike: () => _toggleLike(meal),
-                    onComment: () => _openComments(meal),
-                    onShare: () => _shareMeal(meal),
+                    onComment: meal.isContestEntry
+                        ? () {}
+                        : () => _openComments(meal),
+                    onShare: meal.isContestEntry
+                        ? () {}
+                        : () => _shareMeal(meal),
                     onFollow: () => _toggleFollow(meal),
                     onMoreOptions: () => _showPostOptions(meal),
                   );
@@ -815,6 +833,48 @@ class _UserStoryViewerState extends State<_UserStoryViewer> {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.86),
+                      ),
+                    ),
+                  ],
+                  if (story.contestEntryId != null) ...[
+                    const SizedBox(height: 12),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.22),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.emoji_events_outlined,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                story.promotedVideoTitle.isEmpty
+                                    ? 'Contest video'
+                                    : story.promotedVideoTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -1349,11 +1409,30 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
     final isSaved = favoriteMeals.any((item) => item.id == meal.id);
     final colorScheme = Theme.of(context).colorScheme;
     final caption = meal.description.trim().isEmpty
-        ? 'Fresh cooking inspiration from ABCDish.'
+        ? meal.isContestEntry
+              ? 'Vote for recipe clarity, cooking method, and final dish.'
+              : 'Fresh cooking inspiration from ABCDish.'
         : meal.description.trim();
+    final isContestEntry = meal.isContestEntry;
+    final threshold = meal.acceptanceThreshold <= 0
+        ? 500
+        : meal.acceptanceThreshold;
+    final progress = (widget.likeCount / threshold).clamp(0.0, 1.0);
+    final contestStageLabel = meal.competitionStatus == 'WINNER'
+        ? 'Category winner • £${_compactCount(meal.prizeAmountGbp ?? 100000)}'
+        : meal.londonQualified
+        ? 'Top 100 London finalist'
+        : 'Public voting';
+    final contestChipLabel = meal.competitionStatus == 'WINNER'
+        ? 'Winner'
+        : meal.londonQualified
+        ? '#${meal.finalistRank ?? ''} London'.trim()
+        : 'Vote';
     final trailerUrl = meal.trailerUrl.trim();
     final videoUrl = meal.videoUrl.trim();
-    final sourceLabel = trailerUrl.isNotEmpty
+    final sourceLabel = isContestEntry
+        ? _categoryLabel(meal.competitionCategory)
+        : trailerUrl.isNotEmpty
         ? '30 sec trailer'
         : videoUrl.isEmpty
         ? null
@@ -1363,7 +1442,12 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
       margin: const EdgeInsets.symmetric(horizontal: 12),
       clipBehavior: Clip.hardEdge,
       elevation: 1,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: isContestEntry
+            ? BorderSide(color: colorScheme.primary, width: 1.4)
+            : BorderSide.none,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1371,20 +1455,28 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
             child: Row(
               children: [
-                _CreatorAvatar(name: widget.creatorName),
+                _CreatorAvatar(
+                  name: isContestEntry
+                      ? 'ABCDish Challenge'
+                      : widget.creatorName,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.creatorName,
+                        isContestEntry
+                            ? 'ABCDish Challenge'
+                            : widget.creatorName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        '${meal.duration} min recipe • ${meal.complexity.name}',
+                        isContestEntry
+                            ? contestStageLabel
+                            : '${meal.duration} min recipe • ${meal.complexity.name}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodySmall,
@@ -1392,14 +1484,21 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
                     ],
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: widget.onFollow,
-                  icon: Icon(
-                    widget.isFollowing ? Icons.check : Icons.person_add_alt_1,
-                    size: 16,
+                if (isContestEntry)
+                  Chip(
+                    avatar: const Icon(Icons.emoji_events_outlined, size: 16),
+                    label: Text(contestChipLabel),
+                    visualDensity: VisualDensity.compact,
+                  )
+                else
+                  TextButton.icon(
+                    onPressed: widget.onFollow,
+                    icon: Icon(
+                      widget.isFollowing ? Icons.check : Icons.person_add_alt_1,
+                      size: 16,
+                    ),
+                    label: Text(widget.isFollowing ? 'Following' : 'Follow'),
                   ),
-                  label: Text(widget.isFollowing ? 'Following' : 'Follow'),
-                ),
                 IconButton(
                   onPressed: widget.onMoreOptions,
                   icon: const Icon(Icons.more_horiz),
@@ -1446,8 +1545,10 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
                     right: 12,
                     top: 12,
                     child: _InfoPill(
-                      icon: Icons.restaurant_menu,
-                      label: meal.complexity.name,
+                      icon: isContestEntry
+                          ? Icons.how_to_vote_outlined
+                          : Icons.restaurant_menu,
+                      label: isContestEntry ? 'Contest' : meal.complexity.name,
                     ),
                   ),
                   if (sourceLabel != null)
@@ -1460,7 +1561,16 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
                     left: 14,
                     right: 14,
                     bottom: 76,
-                    child: _OpenRecipeCta(onTap: widget.onOpenMeal),
+                    child: isContestEntry
+                        ? _ContestProgressCta(
+                            votes: widget.likeCount,
+                            threshold: threshold,
+                            progress: progress,
+                            statusLabel: contestStageLabel,
+                            isWinner: meal.competitionStatus == 'WINNER',
+                            onVote: widget.onLike,
+                          )
+                        : _OpenRecipeCta(onTap: widget.onOpenMeal),
                   ),
                   Center(
                     child: IgnorePointer(
@@ -1545,14 +1655,26 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
                       : colorScheme.primary,
                 ),
                 const Spacer(),
-                TextButton(
-                  onPressed: widget.onComment,
-                  child: Text('${_compactCount(widget.commentCount)} comments'),
-                ),
-                TextButton(
-                  onPressed: widget.onShare,
-                  child: Text('${_compactCount(widget.shareCount)} shares'),
-                ),
+                if (isContestEntry)
+                  Text(
+                    contestStageLabel,
+                    style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  )
+                else ...[
+                  TextButton(
+                    onPressed: widget.onComment,
+                    child: Text(
+                      '${_compactCount(widget.commentCount)} comments',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: widget.onShare,
+                    child: Text('${_compactCount(widget.shareCount)} shares'),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1566,46 +1688,56 @@ class _SocialMealPostState extends ConsumerState<_SocialMealPost>
                     icon: widget.isLiked
                         ? Icons.favorite
                         : Icons.favorite_border,
-                    label: 'Like',
+                    label: isContestEntry ? 'Vote' : 'Like',
                     color: widget.isLiked ? Colors.redAccent : null,
                     onPressed: widget.onLike,
                   ),
                 ),
-                Expanded(
-                  child: _PostActionButton(
-                    icon: Icons.mode_comment_outlined,
-                    label: 'Comment',
-                    onPressed: widget.onComment,
+                if (!isContestEntry) ...[
+                  Expanded(
+                    child: _PostActionButton(
+                      icon: Icons.mode_comment_outlined,
+                      label: 'Comment',
+                      onPressed: widget.onComment,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _PostActionButton(
-                    icon: Icons.share_outlined,
-                    label: 'Share',
-                    onPressed: widget.onShare,
+                  Expanded(
+                    child: _PostActionButton(
+                      icon: Icons.share_outlined,
+                      label: 'Share',
+                      onPressed: widget.onShare,
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: _PostActionButton(
-                    icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
-                    label: 'Save',
-                    color: isSaved ? colorScheme.primary : null,
-                    onPressed: () async {
-                      final canContinue = await ensureLoggedIn(context, ref);
-                      if (!canContinue || !context.mounted) return;
+                  Expanded(
+                    child: _PostActionButton(
+                      icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
+                      label: 'Save',
+                      color: isSaved ? colorScheme.primary : null,
+                      onPressed: () async {
+                        final canContinue = await ensureLoggedIn(context, ref);
+                        if (!canContinue || !context.mounted) return;
 
-                      ref
-                          .read(favoriteMealsProvider.notifier)
-                          .toggleMealFavoriteStatus(meal);
-                    },
+                        ref
+                            .read(favoriteMealsProvider.notifier)
+                            .toggleMealFavoriteStatus(meal);
+                      },
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _categoryLabel(String category) {
+    final cleaned = category.trim().replaceAll('_', ' ');
+    if (cleaned.isEmpty || cleaned == 'main') {
+      return 'Competition entry';
+    }
+    return '${cleaned[0].toUpperCase()}${cleaned.substring(1)}';
   }
 }
 
@@ -2198,6 +2330,91 @@ class _OpenRecipeCtaState extends State<_OpenRecipeCta>
             ),
             icon: const Icon(Icons.restaurant_menu),
             label: const Text('Want to cook?'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ContestProgressCta extends StatelessWidget {
+  const _ContestProgressCta({
+    required this.votes,
+    required this.threshold,
+    required this.progress,
+    required this.statusLabel,
+    required this.isWinner,
+    required this.onVote,
+  });
+
+  final int votes;
+  final int threshold;
+  final double progress;
+  final String statusLabel;
+  final bool isWinner;
+  final VoidCallback onVote;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: onVote,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 290),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isWinner
+                            ? Icons.workspace_premium_outlined
+                            : Icons.how_to_vote_outlined,
+                        color: Colors.black87,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          statusLabel,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(999),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor: Colors.black12,
+                      color: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '$votes / $threshold recipe-first votes',
+                    style: Theme.of(context).textTheme.labelSmall!.copyWith(
+                      color: Colors.black.withValues(alpha: 0.68),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

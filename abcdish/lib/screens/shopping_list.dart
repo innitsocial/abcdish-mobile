@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/providers/shopping_list_provider.dart';
 import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/utils/app_snack_bar.dart';
@@ -11,6 +12,7 @@ class ShoppingListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final shoppingItems = ref.watch(shoppingListProvider);
+    final text = ref.watch(appTextProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     if (shoppingItems.isEmpty) {
@@ -18,7 +20,9 @@ class ShoppingListScreen extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Your shopping list is empty.\nAdd ingredients from a recipe.',
+            text.raw(
+              'Your shopping list is empty.\nAdd ingredients from a recipe.',
+            ),
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
@@ -35,7 +39,7 @@ class ShoppingListScreen extends ConsumerWidget {
           child: Row(
             children: [
               Text(
-                '${shoppingItems.length} items',
+                '${shoppingItems.length} ${text.raw('items')}',
                 style: Theme.of(context).textTheme.titleMedium!.copyWith(
                   color: colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
@@ -46,12 +50,12 @@ class ShoppingListScreen extends ConsumerWidget {
                 onPressed: () {
                   ref.read(shoppingListProvider.notifier).clearList();
 
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(errorSnackBar('Shopping list cleared'));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    errorSnackBar(text.raw('Shopping list cleared')),
+                  );
                 },
                 icon: const Icon(Icons.delete_sweep),
-                label: const Text('Clear'),
+                label: Text(text.raw('Clear')),
               ),
             ],
           ),
@@ -69,7 +73,7 @@ class ShoppingListScreen extends ConsumerWidget {
                 );
               },
               icon: const Icon(Icons.storefront),
-              label: const Text('Find Partner Stores'),
+              label: Text(text.raw('Find Partner Stores')),
             ),
           ),
         ),
@@ -97,7 +101,7 @@ class ShoppingListScreen extends ConsumerWidget {
 
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(errorSnackBar('$item removed'));
+                  ).showSnackBar(errorSnackBar('$item ${text.raw('removed')}'));
                 },
                 child: Card(
                   margin: const EdgeInsets.only(bottom: 8),

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
 import 'package:abcdish/providers/language_provider.dart';
 import 'package:abcdish/providers/theme_mode_provider.dart';
-import 'package:abcdish/screens/creator_recipes.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
+import 'package:abcdish/utils/app_snack_bar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -36,23 +37,27 @@ class ProfileScreen extends ConsumerWidget {
 
     if (!context.mounted) return;
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Logged out successfully')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      successSnackBar(ref.read(appTextProvider).loggedOutSuccessfully),
+    );
   }
 
   Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This permanently deletes your ABCDish account, stories, comments, likes, sessions, and saved app data. This cannot be undone.',
+        title: Text(ref.read(appTextProvider).raw('Delete account?')),
+        content: Text(
+          ref
+              .read(appTextProvider)
+              .raw(
+                'This permanently deletes your ABCDish account, stories, comments, likes, sessions, and saved app data. This cannot be undone.',
+              ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(ref.read(appTextProvider).raw('Cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -60,7 +65,7 @@ class ProfileScreen extends ConsumerWidget {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('Delete'),
+            child: Text(ref.read(appTextProvider).raw('Delete')),
           ),
         ],
       ),
@@ -77,9 +82,9 @@ class ProfileScreen extends ConsumerWidget {
       SnackBar(
         content: Text(
           deleted
-              ? 'Your account has been deleted'
+              ? ref.read(appTextProvider).raw('Your account has been deleted')
               : ref.read(authProvider).errorMessage ??
-                    'Could not delete account',
+                    ref.read(appTextProvider).raw('Could not delete account'),
         ),
       ),
     );
@@ -89,6 +94,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final sessionAsync = ref.watch(appSessionProvider);
+    final text = ref.watch(appTextProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     if (!authState.isLoggedIn) {
@@ -106,7 +112,7 @@ class ProfileScreen extends ConsumerWidget {
           const Icon(Icons.error_outline, size: 60),
           const SizedBox(height: 16),
           Text(
-            'Could not load profile',
+            text.raw('Could not load profile'),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall!.copyWith(
               fontWeight: FontWeight.bold,
@@ -115,7 +121,9 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Please try again. If this keeps happening, logout and sign in again.',
+            text.raw(
+              'Please try again. If this keeps happening, logout and sign in again.',
+            ),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),
@@ -131,13 +139,13 @@ class ProfileScreen extends ConsumerWidget {
           FilledButton.icon(
             onPressed: () => ref.invalidate(appSessionProvider),
             icon: const Icon(Icons.refresh),
-            label: const Text('Try again'),
+            label: Text(text.raw('Try again')),
           ),
           const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: () => _logout(context, ref),
             icon: const Icon(Icons.logout),
-            label: const Text('Logout'),
+            label: Text(text.raw('Logout')),
           ),
         ],
       ),
@@ -166,8 +174,8 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             Text(
               session.name?.isNotEmpty == true
-                  ? 'Welcome ${session.name}'
-                  : 'Welcome back',
+                  ? '${text.raw('Welcome')} ${session.name}'
+                  : text.raw('Welcome back'),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall!.copyWith(
                 fontWeight: FontWeight.bold,
@@ -177,8 +185,8 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               isPaid
-                  ? 'ABCDish Member: unlimited cooking videos.'
-                  : 'Free plan: ${session.remainingViews} videos remaining this month.',
+                  ? text.raw('ABCDish Member: unlimited cooking videos.')
+                  : '${text.raw('Free plan')}: ${session.remainingViews} ${text.raw('videos remaining this month')}.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium!.copyWith(
                 color: colorScheme.onSurface,
@@ -192,22 +200,26 @@ class ProfileScreen extends ConsumerWidget {
                   Icons.workspace_premium,
                   color: colorScheme.primary,
                 ),
-                title: Text(isPaid ? 'ABCDish Member' : 'Free Plan'),
+                title: Text(
+                  isPaid ? text.raw('ABCDish Member') : text.raw('Free Plan'),
+                ),
                 subtitle: Text(
                   isPaid
-                      ? 'Unlimited videos enabled'
-                      : '${session.monthlyVideoViews} used • ${session.remainingViews} remaining',
+                      ? text.raw('Unlimited videos enabled')
+                      : '${session.monthlyVideoViews} ${text.raw('used')} • ${session.remainingViews} ${text.raw('remaining')}',
                 ),
                 trailing: session.features.shouldShowUpgrade
                     ? FilledButton(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Membership upgrade coming soon'),
+                            SnackBar(
+                              content: Text(
+                                text.raw('Membership upgrade coming soon'),
+                              ),
                             ),
                           );
                         },
-                        child: const Text('Upgrade'),
+                        child: Text(text.raw('Upgrade')),
                       )
                     : const Icon(Icons.check_circle),
               ),
@@ -216,41 +228,35 @@ class ProfileScreen extends ConsumerWidget {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.verified_user_outlined),
-                title: const Text('Account verification'),
+                title: Text(text.raw('Account verification')),
                 subtitle: Text(
-                  'Email: ${session.emailVerified ? "Verified" : "Not verified"}',
+                  '${text.email}: ${session.emailVerified ? text.raw("Verified") : text.raw("Not verified")}',
                 ),
               ),
             ),
             const SizedBox(height: 12),
             _ProfileTile(
-              icon: Icons.video_call,
-              title: 'Creator Studio',
-              subtitle: 'Manage, edit, remove, and publish recipes',
-              onTap: () => _open(context, const CreatorRecipesScreen()),
-            ),
-            _ProfileTile(
               icon: Icons.storefront,
-              title: 'Partner Stores',
-              subtitle: 'Browse stores connected to shopping lists',
+              title: text.raw('Partner Stores'),
+              subtitle: text.raw('Browse stores connected to shopping lists'),
               onTap: () => _open(context, const PartnerStoresScreen()),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: () => _logout(context, ref),
               icon: const Icon(Icons.logout),
-              label: const Text('Logout'),
+              label: Text(text.raw('Logout')),
             ),
             const SizedBox(height: 24),
             const Divider(),
-            const ListTile(
-              leading: Icon(Icons.info_outline),
-              title: Text('About ABCDish'),
-              subtitle: Text('Any Buddy Can Dish'),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: Text(text.aboutAbcdish),
+              subtitle: Text(text.anyBuddyCanDish),
             ),
-            const ListTile(
-              leading: Icon(Icons.privacy_tip_outlined),
-              title: Text('Privacy Policy'),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: Text(text.raw('Privacy Policy')),
             ),
             const _ThemeSettingsCard(),
             const SizedBox(height: 12),
@@ -261,11 +267,11 @@ class ProfileScreen extends ConsumerWidget {
                   color: colorScheme.error,
                 ),
                 title: Text(
-                  'Delete account',
+                  text.raw('Delete account'),
                   style: TextStyle(color: colorScheme.error),
                 ),
-                subtitle: const Text(
-                  'Permanently remove your account and personal data',
+                subtitle: Text(
+                  text.raw('Permanently remove your account and personal data'),
                 ),
                 onTap: () => _deleteAccount(context, ref),
               ),
@@ -307,10 +313,86 @@ class _ProfileTile extends StatelessWidget {
 class _ThemeSettingsCard extends ConsumerWidget {
   const _ThemeSettingsCard();
 
+  void _showLanguagePicker(BuildContext context, WidgetRef ref) {
+    final selectedLanguage = ref.read(languageProvider);
+    final text = ref.read(appTextProvider);
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.78,
+        minChildSize: 0.45,
+        maxChildSize: 0.92,
+        builder: (context, scrollController) => SafeArea(
+          child: ListView.separated(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            itemCount: supportedAppLanguages.length + 1,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 2, 4, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        text.chooseLanguage,
+                        style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${supportedAppLanguages.length} languages',
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final language = supportedAppLanguages[index - 1];
+              final isSelected = language.code == selectedLanguage.code;
+
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  Icons.translate,
+                  color: isSelected
+                      ? Theme.of(context).colorScheme.primary
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                title: Text(language.nativeName),
+                subtitle: Text(language.name),
+                trailing: isSelected
+                    ? Icon(
+                        Icons.check_circle,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
+                    : null,
+                onTap: () {
+                  ref.read(languageProvider.notifier).setLanguage(language);
+                  Navigator.of(context).pop();
+                },
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final appLanguage = ref.watch(languageProvider);
+    final text = ref.watch(appTextProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
@@ -324,7 +406,7 @@ class _ThemeSettingsCard extends ConsumerWidget {
                 Icon(Icons.settings_outlined, color: colorScheme.primary),
                 const SizedBox(width: 12),
                 Text(
-                  'Settings',
+                  text.settings,
                   style: Theme.of(context).textTheme.titleMedium!.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -336,22 +418,22 @@ class _ThemeSettingsCard extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Appearance',
+                    text.appearance,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
                 SegmentedButton<ThemeMode>(
                   showSelectedIcon: false,
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode_outlined),
-                      label: Text('Light'),
+                      icon: const Icon(Icons.light_mode_outlined),
+                      label: Text(text.light),
                     ),
                     ButtonSegment(
                       value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode_outlined),
-                      label: Text('Dark'),
+                      icon: const Icon(Icons.dark_mode_outlined),
+                      label: Text(text.dark),
                     ),
                   ],
                   selected: {themeMode},
@@ -364,34 +446,17 @@ class _ThemeSettingsCard extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Language',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-                DropdownButton<AppLanguage>(
-                  value: appLanguage,
-                  items: supportedAppLanguages
-                      .map(
-                        (language) => DropdownMenuItem(
-                          value: language,
-                          child: Text(language.nativeName),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (language) {
-                    if (language == null) return;
-                    ref.read(languageProvider.notifier).setLanguage(language);
-                  },
-                ),
-              ],
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.translate, color: colorScheme.primary),
+              title: Text(text.language),
+              subtitle: Text('${appLanguage.nativeName} · ${appLanguage.name}'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => _showLanguagePicker(context, ref),
             ),
             const SizedBox(height: 6),
             Text(
-              'AI recipe text and generated video metadata will use this language.',
+              text.languageHelp,
               style: Theme.of(context).textTheme.bodySmall!.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -403,14 +468,15 @@ class _ThemeSettingsCard extends ConsumerWidget {
   }
 }
 
-class _LoggedOutProfile extends StatelessWidget {
+class _LoggedOutProfile extends ConsumerWidget {
   const _LoggedOutProfile({required this.onLogin, required this.onRegister});
 
   final VoidCallback onLogin;
   final VoidCallback onRegister;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = ref.watch(appTextProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return ListView(
@@ -427,7 +493,7 @@ class _LoggedOutProfile extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Text(
-          'Welcome to ABCDish',
+          text.welcomeToAbcdish,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.headlineSmall!.copyWith(
             fontWeight: FontWeight.bold,
@@ -436,7 +502,7 @@ class _LoggedOutProfile extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          'Login to save favourites, shopping lists and watch more videos.',
+          text.loggedOutHelp,
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodyMedium!.copyWith(
             color: colorScheme.onSurface,
@@ -447,20 +513,20 @@ class _LoggedOutProfile extends StatelessWidget {
         FilledButton.icon(
           onPressed: onLogin,
           icon: const Icon(Icons.login),
-          label: const Text('Login'),
+          label: Text(text.login),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: onRegister,
           icon: const Icon(Icons.person_add),
-          label: const Text('Create Account'),
+          label: Text(text.createAccount),
         ),
         const SizedBox(height: 24),
         const Divider(),
-        const ListTile(
-          leading: Icon(Icons.info_outline),
-          title: Text('About ABCDish'),
-          subtitle: Text('Any Buddy Can Dish'),
+        ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: Text(text.aboutAbcdish),
+          subtitle: Text(text.anyBuddyCanDish),
         ),
       ],
     );

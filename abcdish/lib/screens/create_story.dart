@@ -4,12 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:abcdish/models/contest_entry.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/services/api_client.dart';
 import 'package:abcdish/services/story_service.dart';
 
 class CreateStoryScreen extends StatefulWidget {
-  const CreateStoryScreen({super.key});
+  const CreateStoryScreen({super.key, this.promotedEntry});
+
+  final ContestEntry? promotedEntry;
 
   @override
   State<CreateStoryScreen> createState() => _CreateStoryScreenState();
@@ -38,6 +41,12 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
     _titleController.addListener(_syncText);
     _captionController.addListener(_syncText);
     _videoUrlController.addListener(_syncText);
+    final promotedEntry = widget.promotedEntry;
+    if (promotedEntry != null) {
+      _titleController.text = promotedEntry.title;
+      _captionController.text =
+          'Vote for my ABCDish contest recipe: ${promotedEntry.title}';
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_cameraOpenedOnStart && mounted) {
         _cameraOpenedOnStart = true;
@@ -188,6 +197,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         caption: _captionController.text.trim(),
         videoUrl: _videoUrlController.text.trim(),
         localVideoPath: _localVideoPath,
+        contestEntryId: widget.promotedEntry?.id,
       );
 
       if (!mounted) return;
@@ -235,6 +245,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
               _StoryCanvas(
                 title: _title,
                 caption: _caption,
+                promotedEntryTitle: widget.promotedEntry?.title,
                 loadingPreview: _loadingPreview,
                 previewFailed: _previewFailed,
                 controller: _previewController,
@@ -289,6 +300,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
                   loadingPreview: _loadingPreview,
                   submitting: _submitting,
                   showVideoUrlField: _showVideoUrlField,
+                  promotedEntryTitle: widget.promotedEntry?.title,
                   onPreview: _loadPreview,
                   onCamera: () => _pickVideo(ImageSource.camera),
                   onGallery: () => _pickVideo(ImageSource.gallery),
@@ -308,6 +320,7 @@ class _StoryCanvas extends StatelessWidget {
   const _StoryCanvas({
     required this.title,
     required this.caption,
+    required this.promotedEntryTitle,
     required this.loadingPreview,
     required this.previewFailed,
     required this.controller,
@@ -316,6 +329,7 @@ class _StoryCanvas extends StatelessWidget {
 
   final String title;
   final String caption;
+  final String? promotedEntryTitle;
   final bool loadingPreview;
   final bool previewFailed;
   final VideoPlayerController? controller;
@@ -379,6 +393,14 @@ class _StoryCanvas extends StatelessWidget {
                   icon: Icons.videocam_outlined,
                   label: 'Add your cooking video',
                 ),
+              if (promotedEntryTitle != null &&
+                  promotedEntryTitle!.trim().isNotEmpty) ...[
+                const SizedBox(height: 10),
+                _StoryNotice(
+                  icon: Icons.emoji_events_outlined,
+                  label: 'Promoting contest entry',
+                ),
+              ],
               if (title.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 Text(
@@ -482,6 +504,7 @@ class _StoryComposerTray extends StatelessWidget {
     required this.loadingPreview,
     required this.submitting,
     required this.showVideoUrlField,
+    required this.promotedEntryTitle,
     required this.onPreview,
     required this.onCamera,
     required this.onGallery,
@@ -495,6 +518,7 @@ class _StoryComposerTray extends StatelessWidget {
   final bool loadingPreview;
   final bool submitting;
   final bool showVideoUrlField;
+  final String? promotedEntryTitle;
   final VoidCallback onPreview;
   final VoidCallback onCamera;
   final VoidCallback onGallery;
@@ -563,6 +587,43 @@ class _StoryComposerTray extends StatelessWidget {
                     ],
                   ),
                 ),
+                if (promotedEntryTitle != null &&
+                    promotedEntryTitle!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white10,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.emoji_events_outlined,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Promoting: $promotedEntryTitle',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (showVideoUrlField) ...[
                   const SizedBox(height: 12),
                   TextFormField(

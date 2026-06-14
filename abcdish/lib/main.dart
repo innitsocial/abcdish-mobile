@@ -1,7 +1,9 @@
 import 'package:abcdish/core/app_error_handler.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/providers/theme_mode_provider.dart';
 import 'package:abcdish/screens/splash.dart';
 import 'package:abcdish/screens/tabs.dart';
@@ -34,10 +36,18 @@ class ABCDishApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
+    final text = ref.watch(appTextProvider);
 
     return MaterialApp(
-      title: 'ABCDish',
+      title: text.appTitle,
       debugShowCheckedModeBanner: false,
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('en')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
       themeMode: themeMode,
       theme: _buildTheme(Brightness.light),
       darkTheme: _buildTheme(Brightness.dark),

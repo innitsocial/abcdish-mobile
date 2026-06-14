@@ -26,6 +26,7 @@ class StoryService {
     required String caption,
     required String videoUrl,
     String? localVideoPath,
+    String? contestEntryId,
   }) async {
     final resolvedVideoUrl = localVideoPath == null
         ? videoUrl
@@ -42,6 +43,8 @@ class StoryService {
         'caption': caption,
         'imageUrl': '',
         'videoUrl': resolvedVideoUrl,
+        if (contestEntryId != null && contestEntryId.isNotEmpty)
+          'contestEntryId': int.tryParse(contestEntryId) ?? contestEntryId,
       },
     );
 

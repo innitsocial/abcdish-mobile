@@ -1,0 +1,406 @@
+Section,Filter / Category,Recipe Name,Region / Cuisine,Key Ingredients,Launch Notes,Suggested Tags
+Meal Moment,Early Morning Drink,Masala Chai,Indian,"black tea, milk, ginger, cardamom",Good for daily habit content,"hot drink, morning"
+Meal Moment,Early Morning Drink,Turkish Coffee,Turkish,"finely ground coffee, sugar",Good for daily habit content,"hot drink, morning"
+Meal Moment,Early Morning Drink,Matcha Latte,Japanese,"matcha, milk",Good for daily habit content,"hot drink, morning"
+Meal Moment,Early Morning Drink,Golden Turmeric Milk,Indian,"milk, turmeric, honey",Good for daily habit content,"hot drink, morning"
+Meal Moment,Early Morning Drink,Fresh Ginger Lemon Tea,Global,"ginger, lemon, honey",Good for daily habit content,"hot drink, morning"
+Meal Moment,Breakfast,Full English Breakfast,British,"eggs, beans, sausage, toast",High-search morning recipes,breakfast
+Meal Moment,Breakfast,Pancakes with Maple Syrup,American,"flour, eggs, milk, maple syrup",High-search morning recipes,breakfast
+Meal Moment,Breakfast,Masala Dosa,South Indian,"rice batter, potato masala",High-search morning recipes,breakfast
+Meal Moment,Breakfast,Shakshuka,Middle Eastern,"eggs, tomato, peppers",High-search morning recipes,breakfast
+Meal Moment,Breakfast,Avocado Toast,Modern Global,"bread, avocado, egg",High-search morning recipes,breakfast
+Meal Moment,Brunch,Eggs Benedict,American,"eggs, hollandaise, muffin",Late morning weekend food,brunch
+Meal Moment,Brunch,French Toast,French/American,"bread, eggs, milk, cinnamon",Late morning weekend food,brunch
+Meal Moment,Brunch,Aloo Paratha with Yogurt,Indian,"wheat, potato, spices",Late morning weekend food,brunch
+Meal Moment,Brunch,Smoked Salmon Bagel,New York,"bagel, salmon, cream cheese",Late morning weekend food,brunch
+Meal Moment,Brunch,Menemen,Turkish,"eggs, tomato, peppers",Late morning weekend food,brunch
+Meal Moment,Mid-Morning Snack,Fruit Chaat,Indian,"mixed fruit, chaat masala",Light bites before lunch,snack
+Meal Moment,Mid-Morning Snack,Granola Yogurt Bowl,Global,"yogurt, granola, berries",Light bites before lunch,snack
+Meal Moment,Mid-Morning Snack,Energy Balls,Global,"dates, oats, nuts",Light bites before lunch,snack
+Meal Moment,Mid-Morning Snack,Cucumber Sandwiches,British,"bread, cucumber, butter",Light bites before lunch,snack
+Meal Moment,Mid-Morning Snack,Banana Peanut Butter Toast,American,"banana, peanut butter, toast",Light bites before lunch,snack
+Meal Moment,Lunch,Chicken Caesar Salad,American,"chicken, romaine, parmesan",Strong mainstream lunch ideas,lunch
+Meal Moment,Lunch,Rajma Chawal,North Indian,"kidney beans, rice",Strong mainstream lunch ideas,lunch
+Meal Moment,Lunch,Margherita Pizza,Italian,"tomato, mozzarella, basil",Strong mainstream lunch ideas,lunch
+Meal Moment,Lunch,Bibimbap,Korean,"rice, vegetables, egg",Strong mainstream lunch ideas,lunch
+Meal Moment,Lunch,Falafel Wrap,Middle Eastern,"falafel, pita, tahini",Strong mainstream lunch ideas,lunch
+Meal Moment,Afternoon Drink,Iced Coffee,Global,"coffee, milk, ice",Good short-form drink recipes,"cold drink, afternoon"
+Meal Moment,Afternoon Drink,Mango Lassi,Indian,"mango, yogurt",Good short-form drink recipes,"cold drink, afternoon"
+Meal Moment,Afternoon Drink,Thai Iced Tea,Thai,"black tea, condensed milk",Good short-form drink recipes,"cold drink, afternoon"
+Meal Moment,Afternoon Drink,Strawberry Smoothie,Global,"strawberry, yogurt, banana",Good short-form drink recipes,"cold drink, afternoon"
+Meal Moment,Afternoon Drink,Mint Lemonade,Middle Eastern,"mint, lemon, sugar",Good short-form drink recipes,"cold drink, afternoon"
+Meal Moment,Afternoon Snack,Samosa,Indian,"potato, pastry, spices",Snackable and shareable,snack
+Meal Moment,Afternoon Snack,Bruschetta,Italian,"bread, tomato, basil",Snackable and shareable,snack
+Meal Moment,Afternoon Snack,Cheese Quesadilla,Mexican,"tortilla, cheese",Snackable and shareable,snack
+Meal Moment,Afternoon Snack,Onigiri,Japanese,"rice, seaweed, filling",Snackable and shareable,snack
+Meal Moment,Afternoon Snack,Hummus with Pita,Middle Eastern,"chickpeas, tahini, pita",Snackable and shareable,snack
+Meal Moment,Evening Snack,Pani Puri,Indian,"puri, potato, tamarind water",Great social/contest content,evening snack
+Meal Moment,Evening Snack,Nachos,Mexican/American,"tortilla chips, cheese, salsa",Great social/contest content,evening snack
+Meal Moment,Evening Snack,Pakora,Indian,"gram flour, vegetables",Great social/contest content,evening snack
+Meal Moment,Evening Snack,Chicken Wings,American,"chicken, hot sauce",Great social/contest content,evening snack
+Meal Moment,Evening Snack,Patatas Bravas,Spanish,"potatoes, spicy tomato sauce",Great social/contest content,evening snack
+Meal Moment,Dinner,Butter Chicken,Indian,"chicken, tomato, cream",Main evening meal classics,dinner
+Meal Moment,Dinner,Spaghetti Bolognese,Italian,"pasta, beef, tomato",Main evening meal classics,dinner
+Meal Moment,Dinner,Beef Wellington,British,"beef, pastry, mushrooms",Main evening meal classics,dinner
+Meal Moment,Dinner,Thai Green Curry,Thai,"coconut milk, curry paste, chicken",Main evening meal classics,dinner
+Meal Moment,Dinner,Ratatouille,French,"eggplant, courgette, tomato",Main evening meal classics,dinner
+Meal Moment,Dessert,Tiramisu,Italian,"mascarpone, coffee, ladyfingers",High appeal sweet recipes,dessert
+Meal Moment,Dessert,Gulab Jamun,Indian,"milk solids, syrup",High appeal sweet recipes,dessert
+Meal Moment,Dessert,Crème Brûlée,French,"cream, egg yolk, sugar",High appeal sweet recipes,dessert
+Meal Moment,Dessert,Chocolate Brownies,American,"chocolate, butter, flour",High appeal sweet recipes,dessert
+Meal Moment,Dessert,Baklava,Middle Eastern,"filo, nuts, honey",High appeal sweet recipes,dessert
+Meal Moment,Late-Night Snack,Maggi Masala Noodles,Indian,"instant noodles, masala",Fast comfort food,late night
+Meal Moment,Late-Night Snack,Grilled Cheese Sandwich,American,"bread, cheese, butter",Fast comfort food,late night
+Meal Moment,Late-Night Snack,Loaded Fries,American,"fries, cheese, toppings",Fast comfort food,late night
+Meal Moment,Late-Night Snack,Egg Fried Rice,Chinese,"rice, egg, spring onion",Fast comfort food,late night
+Meal Moment,Late-Night Snack,Garlic Bread,Italian/American,"bread, garlic, butter",Fast comfort food,late night
+Meal Moment,Party / Sharing Food,Charcuterie Board,European,"cheese, meats, crackers",Good for events and social sharing,party food
+Meal Moment,Party / Sharing Food,Chicken Tikka Skewers,Indian,"chicken, yogurt, spices",Good for events and social sharing,party food
+Meal Moment,Party / Sharing Food,Mini Sliders,American,"buns, beef, cheese",Good for events and social sharing,party food
+Meal Moment,Party / Sharing Food,Spring Rolls,Chinese/Vietnamese,"wrappers, vegetables",Good for events and social sharing,party food
+Meal Moment,Party / Sharing Food,Mezze Platter,Middle Eastern,"hummus, falafel, olives",Good for events and social sharing,party food
+Meal Moment,Lunchbox / Meal Prep,Chicken Burrito Bowl,Mexican/American,"rice, chicken, beans",Practical repeat-use recipes,"meal prep, lunchbox"
+Meal Moment,Lunchbox / Meal Prep,Pasta Salad,Italian/American,"pasta, vegetables",Practical repeat-use recipes,"meal prep, lunchbox"
+Meal Moment,Lunchbox / Meal Prep,Vegetable Pulao,Indian,"rice, vegetables, spices",Practical repeat-use recipes,"meal prep, lunchbox"
+Meal Moment,Lunchbox / Meal Prep,Teriyaki Chicken Bento,Japanese,"chicken, rice, vegetables",Practical repeat-use recipes,"meal prep, lunchbox"
+Meal Moment,Lunchbox / Meal Prep,Quinoa Chickpea Bowl,Global,"quinoa, chickpeas, vegetables",Practical repeat-use recipes,"meal prep, lunchbox"
+Diet / Protein,Vegetarian,Palak Paneer,Indian,"spinach, paneer",Core vegetarian library,vegetarian
+Diet / Protein,Vegetarian,Margherita Pizza,Italian,"tomato, mozzarella",Core vegetarian library,vegetarian
+Diet / Protein,Vegetarian,Vegetable Lasagna,Italian,"pasta, vegetables, cheese",Core vegetarian library,vegetarian
+Diet / Protein,Vegetarian,Mushroom Risotto,Italian,"rice, mushrooms, parmesan",Core vegetarian library,vegetarian
+Diet / Protein,Vegetarian,Chana Masala,Indian,"chickpeas, tomato, spices",Core vegetarian library,vegetarian
+Diet / Protein,Vegan,Vegan Buddha Bowl,Global,"grains, vegetables, tahini",Important for global users,vegan
+Diet / Protein,Vegan,Chickpea Curry,Indian,"chickpeas, coconut/tomato",Important for global users,vegan
+Diet / Protein,Vegan,Vegan Pad Thai,Thai,"rice noodles, tofu, tamarind",Important for global users,vegan
+Diet / Protein,Vegan,Lentil Bolognese,Italian,"lentils, tomato, pasta",Important for global users,vegan
+Diet / Protein,Vegan,Stuffed Bell Peppers,Mediterranean,"peppers, rice, beans",Important for global users,vegan
+Diet / Protein,Pescatarian,Salmon Teriyaki,Japanese,"salmon, soy, mirin",Fish-eating diet filter,pescatarian
+Diet / Protein,Pescatarian,Tuna Niçoise Salad,French,"tuna, eggs, beans",Fish-eating diet filter,pescatarian
+Diet / Protein,Pescatarian,Shrimp Tacos,Mexican,"shrimp, tortilla, slaw",Fish-eating diet filter,pescatarian
+Diet / Protein,Pescatarian,Fish Curry,Indian,"fish, coconut, spices",Fish-eating diet filter,pescatarian
+Diet / Protein,Pescatarian,Seafood Paella,Spanish,"rice, seafood, saffron",Fish-eating diet filter,pescatarian
+Diet / Protein,Seafood,Grilled Salmon,Global,"salmon, lemon, herbs",Seafood-only discovery,seafood
+Diet / Protein,Seafood,Garlic Butter Prawns,Global,"prawns, garlic, butter",Seafood-only discovery,seafood
+Diet / Protein,Seafood,Clam Chowder,American,"clams, potatoes, cream",Seafood-only discovery,seafood
+Diet / Protein,Seafood,Fish and Chips,British,"white fish, potatoes",Seafood-only discovery,seafood
+Diet / Protein,Seafood,Lobster Roll,American,"lobster, bun, mayo",Seafood-only discovery,seafood
+Diet / Protein,Chicken,Chicken Biryani,Indian,"rice, chicken, spices",Popular protein filter,chicken
+Diet / Protein,Chicken,Chicken Alfredo Pasta,Italian/American,"chicken, pasta, cream",Popular protein filter,chicken
+Diet / Protein,Chicken,Chicken Shawarma,Middle Eastern,"chicken, spices, pita",Popular protein filter,chicken
+Diet / Protein,Chicken,Chicken Tikka Masala,British Indian,"chicken, tomato, cream",Popular protein filter,chicken
+Diet / Protein,Chicken,Roast Chicken,European,"whole chicken, herbs",Popular protein filter,chicken
+Diet / Protein,Beef,Beef Tacos,Mexican,"beef, tortilla, salsa",Popular meat filter,beef
+Diet / Protein,Beef,Beef Stroganoff,Russian,"beef, mushrooms, sour cream",Popular meat filter,beef
+Diet / Protein,Beef,Steak Frites,French,"steak, fries",Popular meat filter,beef
+Diet / Protein,Beef,Beef Rendang,Indonesian,"beef, coconut, spices",Popular meat filter,beef
+Diet / Protein,Beef,Chilli Con Carne,Tex-Mex,"beef, beans, chilli",Popular meat filter,beef
+Diet / Protein,Lamb,Lamb Rogan Josh,Kashmiri,"lamb, spices, yogurt",Premium meat recipes,lamb
+Diet / Protein,Lamb,Greek Lamb Gyros,Greek,"lamb, pita, tzatziki",Premium meat recipes,lamb
+Diet / Protein,Lamb,Lamb Tagine,Moroccan,"lamb, apricots, spices",Premium meat recipes,lamb
+Diet / Protein,Lamb,Shepherd’s Pie,British,"lamb mince, potato",Premium meat recipes,lamb
+Diet / Protein,Lamb,Grilled Lamb Chops,Mediterranean,"lamb, rosemary, garlic",Premium meat recipes,lamb
+Diet / Protein,Pork,Pulled Pork Sandwich,American,"pork shoulder, BBQ sauce",Region-sensitive but useful,pork
+Diet / Protein,Pork,Pork Dumplings,Chinese,"pork, wrappers",Region-sensitive but useful,pork
+Diet / Protein,Pork,Tonkatsu,Japanese,"pork cutlet, breadcrumbs",Region-sensitive but useful,pork
+Diet / Protein,Pork,Carbonara,Italian,"pasta, egg, pancetta",Region-sensitive but useful,pork
+Diet / Protein,Pork,Pork Vindaloo,Goan,"pork, vinegar, spices",Region-sensitive but useful,pork
+Diet / Protein,Egg,Egg Curry,Indian,"eggs, tomato, spices",Simple protein recipes,egg
+Diet / Protein,Egg,Omelette,French/Global,"eggs, herbs",Simple protein recipes,egg
+Diet / Protein,Egg,Spanish Tortilla,Spanish,"eggs, potato",Simple protein recipes,egg
+Diet / Protein,Egg,Deviled Eggs,American,"eggs, mayo, mustard",Simple protein recipes,egg
+Diet / Protein,Egg,Tamago Sando,Japanese,"egg salad, milk bread",Simple protein recipes,egg
+Allergy / Intolerance,Gluten Free,Chicken Tikka with Rice,Indian,"chicken, rice, spices",Use verified gluten-free ingredients,gluten free
+Allergy / Intolerance,Gluten Free,Corn Tacos,Mexican,"corn tortillas, filling",Use verified gluten-free ingredients,gluten free
+Allergy / Intolerance,Gluten Free,Greek Salad,Greek,"feta, cucumber, olives",Use verified gluten-free ingredients,gluten free
+Allergy / Intolerance,Gluten Free,Rice Paper Rolls,Vietnamese,"rice paper, vegetables",Use verified gluten-free ingredients,gluten free
+Allergy / Intolerance,Gluten Free,Flourless Chocolate Cake,French/Global,"chocolate, eggs, butter",Use verified gluten-free ingredients,gluten free
+Allergy / Intolerance,Lactose Free,Tomato Basil Pasta,Italian,"pasta, tomato, basil",Avoid dairy/lactose,lactose free
+Allergy / Intolerance,Lactose Free,Chicken Fajitas,Tex-Mex,"chicken, peppers",Avoid dairy/lactose,lactose free
+Allergy / Intolerance,Lactose Free,Vegetable Stir Fry,Chinese,"vegetables, soy sauce",Avoid dairy/lactose,lactose free
+Allergy / Intolerance,Lactose Free,Lentil Soup,Middle Eastern,"lentils, vegetables",Avoid dairy/lactose,lactose free
+Allergy / Intolerance,Lactose Free,Sorbet,French/Global,"fruit, sugar",Avoid dairy/lactose,lactose free
+Allergy / Intolerance,Dairy Free,Thai Red Curry,Thai,"coconut milk, curry paste",Dairy-free but check labels,dairy free
+Allergy / Intolerance,Dairy Free,Hummus Bowl,Middle Eastern,"chickpeas, tahini",Dairy-free but check labels,dairy free
+Allergy / Intolerance,Dairy Free,Sushi Rolls,Japanese,"rice, nori, fish/veg",Dairy-free but check labels,dairy free
+Allergy / Intolerance,Dairy Free,Chicken Satay,Indonesian/Thai,"chicken, peanut sauce",Dairy-free but check labels,dairy free
+Allergy / Intolerance,Dairy Free,Apple Crumble with Oats,British,"apples, oats",Dairy-free but check labels,dairy free
+Allergy / Intolerance,Nut Free,Classic Risotto,Italian,"rice, stock, parmesan",Avoid nut garnish/cross-contact,nut free
+Allergy / Intolerance,Nut Free,Chicken Noodle Soup,American,"chicken, noodles",Avoid nut garnish/cross-contact,nut free
+Allergy / Intolerance,Nut Free,Beef Tacos,Mexican,"beef, tortillas",Avoid nut garnish/cross-contact,nut free
+Allergy / Intolerance,Nut Free,Vegetable Fried Rice,Chinese,"rice, vegetables",Avoid nut garnish/cross-contact,nut free
+Allergy / Intolerance,Nut Free,Lemon Drizzle Cake,British,"lemon, flour, eggs",Avoid nut garnish/cross-contact,nut free
+Allergy / Intolerance,Peanut Free,Margherita Pizza,Italian,"tomato, mozzarella",Flag peanut-free separately,peanut free
+Allergy / Intolerance,Peanut Free,Chicken Korma without Nuts,Indian,"chicken, yogurt, spices",Flag peanut-free separately,peanut free
+Allergy / Intolerance,Peanut Free,Spaghetti Pomodoro,Italian,"pasta, tomato",Flag peanut-free separately,peanut free
+Allergy / Intolerance,Peanut Free,Fish Tacos,Mexican,"fish, cabbage",Flag peanut-free separately,peanut free
+Allergy / Intolerance,Peanut Free,Berry Pavlova,Australian/New Zealand,"meringue, berries",Flag peanut-free separately,peanut free
+Allergy / Intolerance,Soy Free,Roast Chicken Dinner,British,"chicken, potatoes",Avoid soy sauce/miso/tofu,soy free
+Allergy / Intolerance,Soy Free,Greek Moussaka,Greek,"eggplant, meat, béchamel",Avoid soy sauce/miso/tofu,soy free
+Allergy / Intolerance,Soy Free,Aloo Gobi,Indian,"potato, cauliflower",Avoid soy sauce/miso/tofu,soy free
+Allergy / Intolerance,Soy Free,Pasta Primavera,Italian,"pasta, vegetables",Avoid soy sauce/miso/tofu,soy free
+Allergy / Intolerance,Soy Free,Moroccan Couscous,Moroccan,"couscous, vegetables",Avoid soy sauce/miso/tofu,soy free
+Allergy / Intolerance,Egg Free,Vegan Pancakes,Global,"flour, plant milk",Useful for baking and allergies,egg free
+Allergy / Intolerance,Egg Free,Chana Masala,Indian,"chickpeas, tomato",Useful for baking and allergies,egg free
+Allergy / Intolerance,Egg Free,Pasta Arrabbiata,Italian,"pasta, chilli, tomato",Useful for baking and allergies,egg free
+Allergy / Intolerance,Egg Free,Falafel,Middle Eastern,"chickpeas, herbs",Useful for baking and allergies,egg free
+Allergy / Intolerance,Egg Free,Chocolate Avocado Mousse,Modern Global,"avocado, cocoa",Useful for baking and allergies,egg free
+Allergy / Intolerance,Shellfish Free,Grilled Salmon,Global,"salmon, lemon",Differentiate fish vs shellfish,shellfish free
+Allergy / Intolerance,Shellfish Free,Chicken Pad Thai without Shrimp,Thai,"noodles, chicken, tamarind",Differentiate fish vs shellfish,shellfish free
+Allergy / Intolerance,Shellfish Free,Vegetable Sushi,Japanese,"rice, nori, vegetables",Differentiate fish vs shellfish,shellfish free
+Allergy / Intolerance,Shellfish Free,Beef Pho,Vietnamese,"beef, rice noodles",Differentiate fish vs shellfish,shellfish free
+Allergy / Intolerance,Shellfish Free,Paneer Butter Masala,Indian,"paneer, tomato, cream",Differentiate fish vs shellfish,shellfish free
+Allergy / Intolerance,Sesame Free,Chicken Caesar Wrap,American,"chicken, lettuce","Check oils, buns, spice blends",sesame free
+Allergy / Intolerance,Sesame Free,Tomato Soup,Global,"tomatoes, stock","Check oils, buns, spice blends",sesame free
+Allergy / Intolerance,Sesame Free,Beef Burger,American,"beef, bun","Check oils, buns, spice blends",sesame free
+Allergy / Intolerance,Sesame Free,Vegetable Pulao,Indian,"rice, vegetables","Check oils, buns, spice blends",sesame free
+Allergy / Intolerance,Sesame Free,Pesto Pasta without Pine Nuts/Sesame,Italian,"basil, parmesan","Check oils, buns, spice blends",sesame free
+Cooking Time,Under 10 Minutes,Avocado Toast,Global,"bread, avocado",Very short recipes,under 10 min
+Cooking Time,Under 10 Minutes,Greek Yogurt Bowl,Global,"yogurt, fruit",Very short recipes,under 10 min
+Cooking Time,Under 10 Minutes,Caprese Salad,Italian,"tomato, mozzarella",Very short recipes,under 10 min
+Cooking Time,Under 10 Minutes,Microwave Mug Cake,American,"flour, cocoa",Very short recipes,under 10 min
+Cooking Time,Under 10 Minutes,Masala Omelette,Indian,"eggs, spices",Very short recipes,under 10 min
+Cooking Time,Under 20 Minutes,Prawn Stir Fry,Chinese/Global,"prawns, vegetables",Fast weekday recipes,under 20 min
+Cooking Time,Under 20 Minutes,Cacio e Pepe,Italian,"pasta, cheese, pepper",Fast weekday recipes,under 20 min
+Cooking Time,Under 20 Minutes,Quesadilla,Mexican,"tortilla, cheese",Fast weekday recipes,under 20 min
+Cooking Time,Under 20 Minutes,Egg Fried Rice,Chinese,"rice, egg",Fast weekday recipes,under 20 min
+Cooking Time,Under 20 Minutes,Tomato Bruschetta,Italian,"bread, tomato",Fast weekday recipes,under 20 min
+Cooking Time,Under 30 Minutes,Chicken Fajitas,Tex-Mex,"chicken, peppers",Launch-friendly time filter,under 30 min
+Cooking Time,Under 30 Minutes,Paneer Bhurji,Indian,"paneer, spices",Launch-friendly time filter,under 30 min
+Cooking Time,Under 30 Minutes,Thai Basil Chicken,Thai,"chicken, basil",Launch-friendly time filter,under 30 min
+Cooking Time,Under 30 Minutes,Salmon with Vegetables,Global,"salmon, vegetables",Launch-friendly time filter,under 30 min
+Cooking Time,Under 30 Minutes,Pesto Pasta,Italian,"pasta, pesto",Launch-friendly time filter,under 30 min
+Cooking Time,30-60 Minutes,Chicken Biryani,Indian,"rice, chicken",Main meal recipes,30-60 min
+Cooking Time,30-60 Minutes,Lasagna,Italian,"pasta, meat/veg",Main meal recipes,30-60 min
+Cooking Time,30-60 Minutes,Roast Vegetables and Chicken,Global,"chicken, vegetables",Main meal recipes,30-60 min
+Cooking Time,30-60 Minutes,Moussaka,Greek,"eggplant, meat",Main meal recipes,30-60 min
+Cooking Time,30-60 Minutes,Shepherd’s Pie,British,"mince, potato",Main meal recipes,30-60 min
+Cooking Time,60+ Minutes,Beef Wellington,British,"beef, pastry",Premium weekend recipes,60+ min
+Cooking Time,60+ Minutes,Ramen Broth,Japanese,"bones/stock, noodles",Premium weekend recipes,60+ min
+Cooking Time,60+ Minutes,Slow Cooked Lamb Tagine,Moroccan,"lamb, spices",Premium weekend recipes,60+ min
+Cooking Time,60+ Minutes,Coq au Vin,French,"chicken, wine",Premium weekend recipes,60+ min
+Cooking Time,60+ Minutes,Dum Biryani,Indian,"rice, meat, spices",Premium weekend recipes,60+ min
+Difficulty,Simple,Omelette,French/Global,eggs,Beginner-friendly,simple
+Difficulty,Simple,Tomato Pasta,Italian,"pasta, tomato",Beginner-friendly,simple
+Difficulty,Simple,Grilled Cheese,American,"bread, cheese",Beginner-friendly,simple
+Difficulty,Simple,Fruit Smoothie,Global,"fruit, yogurt",Beginner-friendly,simple
+Difficulty,Simple,Aloo Jeera,Indian,"potato, cumin",Beginner-friendly,simple
+Difficulty,Medium,Butter Chicken,Indian,"chicken, spices",Needs timing/technique,medium
+Difficulty,Medium,Risotto,Italian,"rice, stock",Needs timing/technique,medium
+Difficulty,Medium,Pad Thai,Thai,"noodles, tamarind",Needs timing/technique,medium
+Difficulty,Medium,Fish Tacos,Mexican,"fish, tortilla",Needs timing/technique,medium
+Difficulty,Medium,Chicken Biryani,Indian,"rice, chicken",Needs timing/technique,medium
+Difficulty,Advanced,Croissants,French,laminated dough,Contest-worthy skills,advanced
+Difficulty,Advanced,Beef Wellington,British,"beef, pastry",Contest-worthy skills,advanced
+Difficulty,Advanced,Macarons,French,"almond flour, meringue",Contest-worthy skills,advanced
+Difficulty,Advanced,Handmade Ramen,Japanese,"noodles, broth",Contest-worthy skills,advanced
+Difficulty,Advanced,Hyderabadi Dum Biryani,Indian,"rice, meat, dum method",Contest-worthy skills,advanced
+Cuisine,Indian,Butter Chicken,North Indian,"chicken, tomato, cream",Useful cuisine browsing,indian
+Cuisine,Indian,Masala Dosa,South Indian,"rice batter, potato",Useful cuisine browsing,indian
+Cuisine,Indian,Biryani,Indian,"rice, meat/veg",Useful cuisine browsing,indian
+Cuisine,Indian,Chole Bhature,North Indian,"chickpeas, fried bread",Useful cuisine browsing,indian
+Cuisine,Indian,Gulab Jamun,Indian,"milk solids, syrup",Useful cuisine browsing,indian
+Cuisine,Italian,Margherita Pizza,Italian,"tomato, mozzarella",Useful cuisine browsing,italian
+Cuisine,Italian,Carbonara,Roman,"pasta, egg, pancetta",Useful cuisine browsing,italian
+Cuisine,Italian,Lasagna,Italian,"pasta, meat/veg",Useful cuisine browsing,italian
+Cuisine,Italian,Risotto Milanese,Italian,"rice, saffron",Useful cuisine browsing,italian
+Cuisine,Italian,Tiramisu,Italian,"mascarpone, coffee",Useful cuisine browsing,italian
+Cuisine,Chinese,Kung Pao Chicken,Sichuan,"chicken, chilli, peanuts",Useful cuisine browsing,chinese
+Cuisine,Chinese,Egg Fried Rice,Chinese,"rice, egg",Useful cuisine browsing,chinese
+Cuisine,Chinese,Mapo Tofu,Sichuan,"tofu, chilli bean paste",Useful cuisine browsing,chinese
+Cuisine,Chinese,Dumplings,Chinese,"wrappers, filling",Useful cuisine browsing,chinese
+Cuisine,Chinese,Sweet and Sour Chicken,Chinese-American,"chicken, pineapple",Useful cuisine browsing,chinese
+Cuisine,Japanese,Sushi Rolls,Japanese,"rice, nori, fish/veg",Useful cuisine browsing,japanese
+Cuisine,Japanese,Chicken Katsu Curry,Japanese,"chicken, curry",Useful cuisine browsing,japanese
+Cuisine,Japanese,Ramen,Japanese,"noodles, broth",Useful cuisine browsing,japanese
+Cuisine,Japanese,Okonomiyaki,Japanese,"cabbage, batter",Useful cuisine browsing,japanese
+Cuisine,Japanese,Teriyaki Salmon,Japanese,"salmon, soy",Useful cuisine browsing,japanese
+Cuisine,Korean,Bibimbap,Korean,"rice, vegetables",Useful cuisine browsing,korean
+Cuisine,Korean,Kimchi Fried Rice,Korean,"kimchi, rice",Useful cuisine browsing,korean
+Cuisine,Korean,Bulgogi,Korean,"beef, soy, pear",Useful cuisine browsing,korean
+Cuisine,Korean,Tteokbokki,Korean,"rice cakes, gochujang",Useful cuisine browsing,korean
+Cuisine,Korean,Korean Fried Chicken,Korean,"chicken, glaze",Useful cuisine browsing,korean
+Cuisine,Thai,Pad Thai,Thai,"noodles, tamarind",Useful cuisine browsing,thai
+Cuisine,Thai,Green Curry,Thai,"coconut, curry paste",Useful cuisine browsing,thai
+Cuisine,Thai,Tom Yum Soup,Thai,"lemongrass, prawns",Useful cuisine browsing,thai
+Cuisine,Thai,Mango Sticky Rice,Thai,"mango, coconut rice",Useful cuisine browsing,thai
+Cuisine,Thai,Thai Basil Chicken,Thai,"chicken, holy basil",Useful cuisine browsing,thai
+Cuisine,Mexican,Tacos al Pastor,Mexican,"pork, pineapple",Useful cuisine browsing,mexican
+Cuisine,Mexican,Guacamole,Mexican,"avocado, lime",Useful cuisine browsing,mexican
+Cuisine,Mexican,Enchiladas,Mexican,"tortillas, sauce",Useful cuisine browsing,mexican
+Cuisine,Mexican,Chiles Rellenos,Mexican,"poblano, cheese",Useful cuisine browsing,mexican
+Cuisine,Mexican,Churros,Mexican/Spanish,"dough, cinnamon",Useful cuisine browsing,mexican
+Cuisine,British,Fish and Chips,British,"fish, potatoes",Useful cuisine browsing,british
+Cuisine,British,Shepherd’s Pie,British,"lamb, potato",Useful cuisine browsing,british
+Cuisine,British,Sunday Roast,British,"meat, potatoes",Useful cuisine browsing,british
+Cuisine,British,Beef Wellington,British,"beef, pastry",Useful cuisine browsing,british
+Cuisine,British,Sticky Toffee Pudding,British,"dates, toffee",Useful cuisine browsing,british
+Cuisine,Middle Eastern,Falafel,Middle Eastern,"chickpeas, herbs",Useful cuisine browsing,middle eastern
+Cuisine,Middle Eastern,Hummus,Levantine,"chickpeas, tahini",Useful cuisine browsing,middle eastern
+Cuisine,Middle Eastern,Shakshuka,Middle Eastern,"eggs, tomato",Useful cuisine browsing,middle eastern
+Cuisine,Middle Eastern,Chicken Shawarma,Middle Eastern,"chicken, spices",Useful cuisine browsing,middle eastern
+Cuisine,Middle Eastern,Baklava,Middle Eastern,"filo, nuts",Useful cuisine browsing,middle eastern
+Cuisine,Mediterranean,Greek Salad,Greek,"feta, cucumber",Useful cuisine browsing,mediterranean
+Cuisine,Mediterranean,Moussaka,Greek,"eggplant, meat",Useful cuisine browsing,mediterranean
+Cuisine,Mediterranean,Ratatouille,French,vegetables,Useful cuisine browsing,mediterranean
+Cuisine,Mediterranean,Paella,Spanish,"rice, saffron",Useful cuisine browsing,mediterranean
+Cuisine,Mediterranean,Tabbouleh,Levantine,"parsley, bulgur",Useful cuisine browsing,mediterranean
+Cuisine,French,Coq au Vin,French,"chicken, wine",Useful cuisine browsing,french
+Cuisine,French,Ratatouille,French,vegetables,Useful cuisine browsing,french
+Cuisine,French,Quiche Lorraine,French,"eggs, cream, bacon",Useful cuisine browsing,french
+Cuisine,French,Crêpes,French,"flour, eggs",Useful cuisine browsing,french
+Cuisine,French,Crème Brûlée,French,"cream, sugar",Useful cuisine browsing,french
+Cuisine,Spanish,Paella Valenciana,Spanish,"rice, saffron",Useful cuisine browsing,spanish
+Cuisine,Spanish,Tortilla Española,Spanish,"eggs, potato",Useful cuisine browsing,spanish
+Cuisine,Spanish,Patatas Bravas,Spanish,"potatoes, sauce",Useful cuisine browsing,spanish
+Cuisine,Spanish,Gazpacho,Spanish,"tomato, cucumber",Useful cuisine browsing,spanish
+Cuisine,Spanish,Churros,Spanish,"dough, cinnamon",Useful cuisine browsing,spanish
+Cuisine,African,Jollof Rice,West African,"rice, tomato, peppers",Useful cuisine browsing,african
+Cuisine,African,Injera with Doro Wat,Ethiopian,"teff, chicken stew",Useful cuisine browsing,african
+Cuisine,African,Bunny Chow,South African,"bread, curry",Useful cuisine browsing,african
+Cuisine,African,Egusi Soup,West African,"melon seeds, greens",Useful cuisine browsing,african
+Cuisine,African,Bobotie,South African,"minced meat, spices",Useful cuisine browsing,african
+Cuisine,Caribbean,Jerk Chicken,Jamaican,"chicken, jerk spice",Useful cuisine browsing,caribbean
+Cuisine,Caribbean,Rice and Peas,Caribbean,"rice, beans, coconut",Useful cuisine browsing,caribbean
+Cuisine,Caribbean,Curry Goat,Jamaican,"goat, curry spices",Useful cuisine browsing,caribbean
+Cuisine,Caribbean,Ackee and Saltfish,Jamaican,"ackee, saltfish",Useful cuisine browsing,caribbean
+Cuisine,Caribbean,Plantain Chips,Caribbean,"plantain, salt",Useful cuisine browsing,caribbean
+Cuisine,American,Cheeseburger,American,"beef, cheese, bun",Useful cuisine browsing,american
+Cuisine,American,Mac and Cheese,American,"pasta, cheese",Useful cuisine browsing,american
+Cuisine,American,BBQ Ribs,American,"pork ribs, BBQ sauce",Useful cuisine browsing,american
+Cuisine,American,Apple Pie,American,"apples, pastry",Useful cuisine browsing,american
+Cuisine,American,Buffalo Wings,American,"chicken, hot sauce",Useful cuisine browsing,american
+Health / Goal,High Protein,Grilled Chicken Bowl,Global,"chicken, rice, veg",Fitness-friendly,high protein
+Health / Goal,High Protein,Tuna Salad,Global,"tuna, greens",Fitness-friendly,high protein
+Health / Goal,High Protein,Greek Yogurt Parfait,Global,"yogurt, berries",Fitness-friendly,high protein
+Health / Goal,High Protein,Turkey Meatballs,Italian/American,"turkey, tomato",Fitness-friendly,high protein
+Health / Goal,High Protein,Tofu Stir Fry,Asian,"tofu, vegetables",Fitness-friendly,high protein
+Health / Goal,Low Calorie,Vegetable Soup,Global,"vegetables, stock",Light meals,low calorie
+Health / Goal,Low Calorie,Grilled Fish Salad,Global,"fish, salad",Light meals,low calorie
+Health / Goal,Low Calorie,Zucchini Noodles,Modern,"courgette, tomato",Light meals,low calorie
+Health / Goal,Low Calorie,Chicken Lettuce Wraps,Asian,"chicken, lettuce",Light meals,low calorie
+Health / Goal,Low Calorie,Miso Soup,Japanese,"miso, seaweed",Light meals,low calorie
+Health / Goal,Low Carb,Cauliflower Fried Rice,Modern,"cauliflower, egg",Carb-conscious,low carb
+Health / Goal,Low Carb,Bunless Burger Bowl,American,"beef, salad",Carb-conscious,low carb
+Health / Goal,Low Carb,Zucchini Lasagna,Italian/Modern,"courgette, cheese",Carb-conscious,low carb
+Health / Goal,Low Carb,Grilled Salmon with Greens,Global,"salmon, greens",Carb-conscious,low carb
+Health / Goal,Low Carb,Egg Muffins,Global,"eggs, vegetables",Carb-conscious,low carb
+Health / Goal,Keto,Keto Butter Chicken,Indian/Modern,"chicken, cream",Special diet; verify macros,keto
+Health / Goal,Keto,Cauliflower Mac and Cheese,Modern,"cauliflower, cheese",Special diet; verify macros,keto
+Health / Goal,Keto,Avocado Egg Salad,Global,"avocado, eggs",Special diet; verify macros,keto
+Health / Goal,Keto,Keto Pizza Bowl,Modern,"cheese, tomato, toppings",Special diet; verify macros,keto
+Health / Goal,Keto,Garlic Butter Steak Bites,Global,"steak, butter",Special diet; verify macros,keto
+Health / Goal,Diabetic Friendly,Lentil Soup,Global,"lentils, vegetables",Avoid medical claims; label cautiously,diabetic friendly
+Health / Goal,Diabetic Friendly,Grilled Chicken Salad,Global,"chicken, greens",Avoid medical claims; label cautiously,diabetic friendly
+Health / Goal,Diabetic Friendly,Vegetable Omelette,Global,"eggs, vegetables",Avoid medical claims; label cautiously,diabetic friendly
+Health / Goal,Diabetic Friendly,Chickpea Cucumber Salad,Mediterranean,"chickpeas, cucumber",Avoid medical claims; label cautiously,diabetic friendly
+Health / Goal,Diabetic Friendly,Baked Salmon,Global,"salmon, herbs",Avoid medical claims; label cautiously,diabetic friendly
+Health / Goal,Kids Friendly,Mac and Cheese,American,"pasta, cheese",Family content,kids friendly
+Health / Goal,Kids Friendly,Mini Pizza Muffins,Global,"bread, tomato, cheese",Family content,kids friendly
+Health / Goal,Kids Friendly,Chicken Nuggets,American,"chicken, breadcrumbs",Family content,kids friendly
+Health / Goal,Kids Friendly,Banana Pancakes,Global,"banana, eggs/flour",Family content,kids friendly
+Health / Goal,Kids Friendly,Hidden Veg Pasta,Global,"pasta, vegetables",Family content,kids friendly
+Health / Goal,Pregnancy Friendly,Vegetable Khichdi,Indian,"rice, lentils",Add disclaimers; avoid medical advice,pregnancy friendly
+Health / Goal,Pregnancy Friendly,Baked Salmon Bowl,Global,"salmon, rice",Add disclaimers; avoid medical advice,pregnancy friendly
+Health / Goal,Pregnancy Friendly,Spinach Lentil Soup,Global,"spinach, lentils",Add disclaimers; avoid medical advice,pregnancy friendly
+Health / Goal,Pregnancy Friendly,Greek Yogurt Fruit Bowl,Global,"yogurt, fruit",Add disclaimers; avoid medical advice,pregnancy friendly
+Health / Goal,Pregnancy Friendly,Chicken and Rice Soup,Global,"chicken, rice",Add disclaimers; avoid medical advice,pregnancy friendly
+Budget,Budget Friendly,Dal Tadka,Indian,"lentils, spices",Low-cost staples,budget
+Budget,Budget Friendly,Egg Fried Rice,Chinese,"rice, egg",Low-cost staples,budget
+Budget,Budget Friendly,Pasta Pomodoro,Italian,"pasta, tomato",Low-cost staples,budget
+Budget,Budget Friendly,Bean Chilli,Tex-Mex,"beans, tomato",Low-cost staples,budget
+Budget,Budget Friendly,Potato Curry,Indian,"potatoes, spices",Low-cost staples,budget
+Budget,Everyday,Chicken Curry,Global/Indian,"chicken, spices",Normal home cooking,everyday
+Budget,Everyday,Vegetable Stir Fry,Asian,"vegetables, sauce",Normal home cooking,everyday
+Budget,Everyday,Tuna Pasta Bake,British,"tuna, pasta",Normal home cooking,everyday
+Budget,Everyday,Turkey Wrap,Global,"turkey, tortilla",Normal home cooking,everyday
+Budget,Everyday,Paneer Pulao,Indian,"paneer, rice",Normal home cooking,everyday
+Budget,Premium,Steak with Peppercorn Sauce,French/Global,"steak, cream",Premium ingredients,premium
+Budget,Premium,Seafood Linguine,Italian,"pasta, seafood",Premium ingredients,premium
+Budget,Premium,Lamb Chops,Mediterranean,"lamb, herbs",Premium ingredients,premium
+Budget,Premium,Saffron Risotto,Italian,"rice, saffron",Premium ingredients,premium
+Budget,Premium,Duck à l’Orange,French,"duck, orange",Premium ingredients,premium
+Budget,Luxury,Lobster Thermidor,French,"lobster, cheese sauce",Special occasion recipes,luxury
+Budget,Luxury,Beef Wellington,British,"beef fillet, pastry",Special occasion recipes,luxury
+Budget,Luxury,Truffle Pasta,Italian,"pasta, truffle",Special occasion recipes,luxury
+Budget,Luxury,Caviar Blini,Russian/French,"blini, caviar",Special occasion recipes,luxury
+Budget,Luxury,Wagyu Steak,Japanese/Global,"wagyu, salt",Special occasion recipes,luxury
+Cooking Method,No Cook,Greek Salad,Greek,"feta, cucumber",No heat required,no cook
+Cooking Method,No Cook,Caprese Salad,Italian,"tomato, mozzarella",No heat required,no cook
+Cooking Method,No Cook,Overnight Oats,Global,"oats, milk",No heat required,no cook
+Cooking Method,No Cook,Hummus Plate,Middle Eastern,"hummus, vegetables",No heat required,no cook
+Cooking Method,No Cook,Tuna Lettuce Cups,Global,"tuna, lettuce",No heat required,no cook
+Cooking Method,Air Fryer,Air Fryer Chips,Global,potatoes,Modern appliance search,air fryer
+Cooking Method,Air Fryer,Air Fryer Chicken Wings,American,chicken wings,Modern appliance search,air fryer
+Cooking Method,Air Fryer,Air Fryer Samosas,Indian,"pastry, potato",Modern appliance search,air fryer
+Cooking Method,Air Fryer,Air Fryer Salmon,Global,salmon,Modern appliance search,air fryer
+Cooking Method,Air Fryer,Air Fryer Falafel,Middle Eastern,chickpeas,Modern appliance search,air fryer
+Cooking Method,Oven Baked,Baked Ziti,Italian/American,"pasta, cheese",Reliable home method,oven baked
+Cooking Method,Oven Baked,Roast Chicken,European,chicken,Reliable home method,oven baked
+Cooking Method,Oven Baked,Baked Salmon,Global,salmon,Reliable home method,oven baked
+Cooking Method,Oven Baked,Lasagna,Italian,"pasta, sauce",Reliable home method,oven baked
+Cooking Method,Oven Baked,Apple Crumble,British,"apples, oats",Reliable home method,oven baked
+Cooking Method,Grill / BBQ,BBQ Ribs,American,"ribs, sauce",Summer/social food,grill
+Cooking Method,Grill / BBQ,Grilled Halloumi,Mediterranean,halloumi,Summer/social food,grill
+Cooking Method,Grill / BBQ,Tandoori Chicken,Indian,"chicken, yogurt",Summer/social food,grill
+Cooking Method,Grill / BBQ,Grilled Corn,Mexican/Global,"corn, spices",Summer/social food,grill
+Cooking Method,Grill / BBQ,Seekh Kebabs,South Asian,"minced meat, spices",Summer/social food,grill
+Cooking Method,One Pot,One Pot Pasta,Italian/Global,"pasta, tomato",Convenience category,one pot
+Cooking Method,One Pot,Chicken Pulao,Indian,"rice, chicken",Convenience category,one pot
+Cooking Method,One Pot,Jambalaya,Cajun,"rice, sausage",Convenience category,one pot
+Cooking Method,One Pot,Lentil Stew,Global,"lentils, vegetables",Convenience category,one pot
+Cooking Method,One Pot,Khichdi,Indian,"rice, lentils",Convenience category,one pot
+Cooking Method,Slow Cooker,Slow Cooker Pulled Pork,American,"pork, BBQ sauce",Set-and-forget meals,slow cooker
+Cooking Method,Slow Cooker,Slow Cooker Beef Stew,Global,"beef, vegetables",Set-and-forget meals,slow cooker
+Cooking Method,Slow Cooker,Slow Cooker Dal,Indian,"lentils, spices",Set-and-forget meals,slow cooker
+Cooking Method,Slow Cooker,Slow Cooker Chilli,Tex-Mex,beef/beans,Set-and-forget meals,slow cooker
+Cooking Method,Slow Cooker,Slow Cooker Lamb Shank,Mediterranean,"lamb, stock",Set-and-forget meals,slow cooker
+Taste / Style,Spicy,Vindaloo,Goan,"meat, vinegar, chilli",Heat-seeking users,spicy
+Taste / Style,Spicy,Mapo Tofu,Sichuan,"tofu, chilli",Heat-seeking users,spicy
+Taste / Style,Spicy,Jerk Chicken,Jamaican,"chicken, Scotch bonnet",Heat-seeking users,spicy
+Taste / Style,Spicy,Arrabbiata Pasta,Italian,"pasta, chilli",Heat-seeking users,spicy
+Taste / Style,Spicy,Tteokbokki,Korean,"rice cakes, gochujang",Heat-seeking users,spicy
+Taste / Style,Mild,Chicken Korma,Indian/British,"chicken, yogurt",Family-friendly mild food,mild
+Taste / Style,Mild,Creamy Mushroom Pasta,Italian/Global,"mushrooms, cream",Family-friendly mild food,mild
+Taste / Style,Mild,Chicken Noodle Soup,American,"chicken, noodles",Family-friendly mild food,mild
+Taste / Style,Mild,Vegetable Risotto,Italian,"rice, vegetables",Family-friendly mild food,mild
+Taste / Style,Mild,Mashed Potato Pie,British,"potato, filling",Family-friendly mild food,mild
+Taste / Style,Sweet,Chocolate Cake,Global,"chocolate, flour",Sweet filter,sweet
+Taste / Style,Sweet,Gulab Jamun,Indian,"milk solids, syrup",Sweet filter,sweet
+Taste / Style,Sweet,Mango Sticky Rice,Thai,"mango, coconut rice",Sweet filter,sweet
+Taste / Style,Sweet,Apple Pie,American,"apples, pastry",Sweet filter,sweet
+Taste / Style,Sweet,Baklava,Middle Eastern,"filo, nuts",Sweet filter,sweet
+Taste / Style,Savory,Beef Empanadas,Latin American,"beef, pastry",Savory cravings,savory
+Taste / Style,Savory,Cheese Soufflé,French,"cheese, eggs",Savory cravings,savory
+Taste / Style,Savory,Samosa,Indian,"potato, pastry",Savory cravings,savory
+Taste / Style,Savory,Ramen,Japanese,"noodles, broth",Savory cravings,savory
+Taste / Style,Savory,Mushroom Pie,British,"mushrooms, pastry",Savory cravings,savory
+Taste / Style,Tangy,Pani Puri,Indian,"tamarind, mint",Fresh acidic flavors,tangy
+Taste / Style,Tangy,Ceviche,Peruvian,"fish, lime",Fresh acidic flavors,tangy
+Taste / Style,Tangy,Greek Lemon Potatoes,Greek,"potato, lemon",Fresh acidic flavors,tangy
+Taste / Style,Tangy,Tom Yum Soup,Thai,"lemongrass, lime",Fresh acidic flavors,tangy
+Taste / Style,Tangy,Pickled Cucumber Salad,Asian/Global,"cucumber, vinegar",Fresh acidic flavors,tangy
+Taste / Style,Creamy,Butter Chicken,Indian,"cream, tomato",Comfort category,creamy
+Taste / Style,Creamy,Fettuccine Alfredo,Italian/American,"cream, parmesan",Comfort category,creamy
+Taste / Style,Creamy,Clam Chowder,American,"clams, cream",Comfort category,creamy
+Taste / Style,Creamy,Mushroom Risotto,Italian,"rice, mushrooms",Comfort category,creamy
+Taste / Style,Creamy,Malai Kofta,Indian,"kofta, creamy sauce",Comfort category,creamy
+Taste / Style,Crispy,Fried Chicken,American,"chicken, coating",Great video texture moments,crispy
+Taste / Style,Crispy,Tempura,Japanese,"seafood/veg, batter",Great video texture moments,crispy
+Taste / Style,Crispy,Pakora,Indian,"gram flour, vegetables",Great video texture moments,crispy
+Taste / Style,Crispy,Fish and Chips,British,"fish, potatoes",Great video texture moments,crispy
+Taste / Style,Crispy,Spring Rolls,Chinese/Vietnamese,"wrapper, vegetables",Great video texture moments,crispy
+Taste / Style,Comfort Food,Mac and Cheese,American,"pasta, cheese",Emotional food category,comfort food
+Taste / Style,Comfort Food,Shepherd’s Pie,British,"mince, potato",Emotional food category,comfort food
+Taste / Style,Comfort Food,Khichdi,Indian,"rice, lentils",Emotional food category,comfort food
+Taste / Style,Comfort Food,Chicken Pot Pie,American,"chicken, pastry",Emotional food category,comfort food
+Taste / Style,Comfort Food,Ramen,Japanese,"noodles, broth",Emotional food category,comfort food
+Taste / Style,Street Food,Tacos al Pastor,Mexican,"pork, tortilla",Viral-style category,street food
+Taste / Style,Street Food,Pani Puri,Indian,"puri, tamarind water",Viral-style category,street food
+Taste / Style,Street Food,Falafel Wrap,Middle Eastern,"falafel, pita",Viral-style category,street food
+Taste / Style,Street Food,Hot Dog,American,"sausage, bun",Viral-style category,street food
+Taste / Style,Street Food,Bánh Mì,Vietnamese,"baguette, pickles, meat",Viral-style category,street food
+Taste / Style,Festive,Turkey Roast,American/British,"turkey, herbs",Seasonal content,festive
+Taste / Style,Festive,Biryani,South Asian,"rice, meat/veg",Seasonal content,festive
+Taste / Style,Festive,Mooncakes,Chinese,"pastry, filling",Seasonal content,festive
+Taste / Style,Festive,Panettone,Italian,sweet bread,Seasonal content,festive
+Taste / Style,Festive,Kheer,Indian,"rice, milk",Seasonal content,festive

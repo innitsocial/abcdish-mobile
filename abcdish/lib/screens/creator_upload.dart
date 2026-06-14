@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/services/api_client.dart';
 import 'package:abcdish/services/meal_service.dart';
 
-class CreatorUploadScreen extends StatefulWidget {
+class CreatorUploadScreen extends ConsumerStatefulWidget {
   const CreatorUploadScreen({super.key, this.meal});
 
   final Meal? meal;
 
   @override
-  State<CreatorUploadScreen> createState() => _CreatorUploadScreenState();
+  ConsumerState<CreatorUploadScreen> createState() =>
+      _CreatorUploadScreenState();
 }
 
-class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
+class _CreatorUploadScreenState extends ConsumerState<CreatorUploadScreen> {
   final _formKey = GlobalKey<FormState>();
   final _picker = ImagePicker();
   final _videoUrlController = TextEditingController();
@@ -119,7 +122,11 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to choose trailer. $error')),
+        SnackBar(
+          content: Text(
+            '${ref.read(appTextProvider).raw('Unable to choose trailer.')} $error',
+          ),
+        ),
       );
     }
   }
@@ -152,7 +159,11 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to upload and read video. $error')),
+        SnackBar(
+          content: Text(
+            '${ref.read(appTextProvider).raw('Unable to upload and read video.')} $error',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -185,7 +196,9 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
         SnackBar(
           content: Text(
             draft['extractionMessage']?.toString() ??
-                'Draft created. Please verify before publishing.',
+                ref
+                    .read(appTextProvider)
+                    .raw('Draft created. Please verify before publishing.'),
           ),
         ),
       );
@@ -194,9 +207,13 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       if (await _redirectToLoginIfNeeded(error)) return;
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to create draft: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${ref.read(appTextProvider).raw('Unable to create draft')}: $error',
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -246,7 +263,11 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
 
     if (_videoUrl.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Upload your cooking video first.')),
+        SnackBar(
+          content: Text(
+            ref.read(appTextProvider).raw('Upload your cooking video first.'),
+          ),
+        ),
       );
       return;
     }
@@ -270,7 +291,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
           : '';
       final promoSubtitle = resolvedTrailerType == 'PROMO_TEXT'
           ? (_promoSubtitleController.text.trim().isEmpty
-                ? 'Tap to cook the full recipe'
+                ? ref.read(appTextProvider).raw('Tap to cook the full recipe')
                 : _promoSubtitleController.text.trim())
           : '';
 
@@ -331,7 +352,11 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to publish recipe: $error')),
+        SnackBar(
+          content: Text(
+            '${ref.read(appTextProvider).raw('Unable to publish recipe')}: $error',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -371,9 +396,12 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
   @override
   Widget build(BuildContext context) {
     final previewUrl = _imageUrlController.text.trim();
+    final text = ref.watch(appTextProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEditing ? 'Edit Recipe' : 'Add Recipe')),
+      appBar: AppBar(
+        title: Text(_isEditing ? text.raw('Edit Recipe') : text.addRecipe),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
         child: Form(
@@ -415,12 +443,14 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
               ),
               const SizedBox(height: 18),
               Text(
-                'Upload recipe',
+                text.raw('Upload recipe'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 4),
               Text(
-                'Upload and manage ABCDish-owned cooking videos. No external video links.',
+                text.raw(
+                  'Upload and manage ABCDish-owned cooking videos. No external video links.',
+                ),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
@@ -441,23 +471,25 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
               const SizedBox(height: 18),
               TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
+                decoration: InputDecoration(labelText: text.raw('Title')),
                 validator: (value) => value == null || value.trim().length < 3
-                    ? 'Enter title'
+                    ? text.raw('Enter title')
                     : null,
                 onSaved: (value) => _title = value!.trim(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
+                decoration: InputDecoration(labelText: text.raw('Description')),
                 maxLines: 3,
                 onSaved: (value) => _description = value?.trim() ?? '',
               ),
               FormField<String>(
                 validator: (_) {
                   final videoUrl = _videoUrlController.text.trim();
-                  if (videoUrl.isEmpty) return 'Add a cooking video first';
+                  if (videoUrl.isEmpty) {
+                    return text.raw('Add a cooking video first');
+                  }
                   return null;
                 },
                 onSaved: (_) => _videoUrl = _videoUrlController.text.trim(),
@@ -478,16 +510,16 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _durationController,
-                decoration: const InputDecoration(
-                  labelText: 'Cooking time',
+                decoration: InputDecoration(
+                  labelText: text.raw('Cooking time'),
                   suffixText: 'min',
-                  prefixIcon: Icon(Icons.timer_outlined),
+                  prefixIcon: const Icon(Icons.timer_outlined),
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
                   final duration = int.tryParse(value?.trim() ?? '');
                   if (duration == null || duration <= 0) {
-                    return 'Enter cooking time in minutes';
+                    return text.raw('Enter cooking time in minutes');
                   }
                   return null;
                 },
@@ -495,14 +527,23 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _complexity,
-                decoration: const InputDecoration(
-                  labelText: 'Difficulty',
-                  prefixIcon: Icon(Icons.local_fire_department_outlined),
+                decoration: InputDecoration(
+                  labelText: text.raw('Difficulty'),
+                  prefixIcon: const Icon(Icons.local_fire_department_outlined),
                 ),
-                items: const [
-                  DropdownMenuItem(value: 'simple', child: Text('Simple')),
-                  DropdownMenuItem(value: 'challenging', child: Text('Medium')),
-                  DropdownMenuItem(value: 'hard', child: Text('Difficult')),
+                items: [
+                  DropdownMenuItem(
+                    value: 'simple',
+                    child: Text(text.raw('Simple')),
+                  ),
+                  DropdownMenuItem(
+                    value: 'challenging',
+                    child: Text(text.raw('Medium')),
+                  ),
+                  DropdownMenuItem(
+                    value: 'hard',
+                    child: Text(text.raw('Difficult')),
+                  ),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -518,7 +559,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
                 children: [
                   FilterChip(
                     selected: _glutenFree,
-                    label: const Text('Gluten-free'),
+                    label: Text(text.raw('Gluten-free')),
                     onSelected: (value) {
                       setState(() {
                         _glutenFree = value;
@@ -527,7 +568,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
                   ),
                   FilterChip(
                     selected: _lactoseFree,
-                    label: const Text('Lactose-free'),
+                    label: Text(text.raw('Lactose-free')),
                     onSelected: (value) {
                       setState(() {
                         _lactoseFree = value;
@@ -536,7 +577,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
                   ),
                   FilterChip(
                     selected: _vegetarian,
-                    label: const Text('Vegetarian'),
+                    label: Text(text.raw('Vegetarian')),
                     onSelected: (value) {
                       setState(() {
                         _vegetarian = value;
@@ -545,7 +586,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
                   ),
                   FilterChip(
                     selected: _vegan,
-                    label: const Text('Vegan'),
+                    label: Text(text.raw('Vegan')),
                     onSelected: (value) {
                       setState(() {
                         _vegan = value;
@@ -557,46 +598,46 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
               const SizedBox(height: 12),
               TextFormField(
                 controller: _categoriesController,
-                decoration: const InputDecoration(
-                  labelText: 'Categories',
-                  prefixIcon: Icon(Icons.category_outlined),
+                decoration: InputDecoration(
+                  labelText: text.raw('Categories'),
+                  prefixIcon: const Icon(Icons.category_outlined),
                 ),
                 validator: (value) => _splitList(value ?? '').isEmpty
-                    ? 'Enter at least one category'
+                    ? text.raw('Enter at least one category')
                     : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _ingredientsController,
-                decoration: const InputDecoration(
-                  labelText: 'Ingredients',
-                  prefixIcon: Icon(Icons.format_list_bulleted),
+                decoration: InputDecoration(
+                  labelText: text.raw('Ingredients'),
+                  prefixIcon: const Icon(Icons.format_list_bulleted),
                 ),
                 minLines: 3,
                 maxLines: 6,
                 validator: (value) => _splitList(value ?? '').isEmpty
-                    ? 'Enter at least one ingredient'
+                    ? text.raw('Enter at least one ingredient')
                     : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _stepsController,
-                decoration: const InputDecoration(
-                  labelText: 'Cooking steps',
-                  prefixIcon: Icon(Icons.checklist_outlined),
+                decoration: InputDecoration(
+                  labelText: text.raw('Cooking steps'),
+                  prefixIcon: const Icon(Icons.checklist_outlined),
                 ),
                 minLines: 3,
                 maxLines: 6,
                 validator: (value) => _splitList(value ?? '').isEmpty
-                    ? 'Enter at least one cooking step'
+                    ? text.raw('Enter at least one cooking step')
                     : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _imageUrlController,
-                decoration: const InputDecoration(
-                  labelText: 'Cover image URL',
-                  prefixIcon: Icon(Icons.image_outlined),
+                decoration: InputDecoration(
+                  labelText: text.raw('Cover image URL'),
+                  prefixIcon: const Icon(Icons.image_outlined),
                 ),
                 keyboardType: TextInputType.url,
                 textInputAction: TextInputAction.done,
@@ -616,11 +657,11 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
                   label: Text(
                     _isPublishing
                         ? _isEditing
-                              ? 'Saving...'
-                              : 'Publishing...'
+                              ? text.raw('Saving...')
+                              : text.raw('Publishing...')
                         : _isEditing
-                        ? 'Save Changes'
-                        : 'Publish',
+                        ? text.raw('Save Changes')
+                        : text.raw('Publish'),
                   ),
                 ),
               ),
@@ -632,7 +673,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
   }
 }
 
-class _OwnVideoUploadPanel extends StatelessWidget {
+class _OwnVideoUploadPanel extends ConsumerWidget {
   const _OwnVideoUploadPanel({
     required this.videoUrl,
     required this.hasLocalVideo,
@@ -646,9 +687,10 @@ class _OwnVideoUploadPanel extends StatelessWidget {
   final VoidCallback onPickVideo;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final hasVideo = videoUrl.isNotEmpty || hasLocalVideo;
+    final text = ref.watch(appTextProvider);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -667,8 +709,8 @@ class _OwnVideoUploadPanel extends StatelessWidget {
                 Expanded(
                   child: Text(
                     hasVideo
-                        ? 'Cooking video uploaded'
-                        : 'Upload your cooking video',
+                        ? text.raw('Cooking video uploaded')
+                        : text.raw('Upload your cooking video'),
                     style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -679,8 +721,12 @@ class _OwnVideoUploadPanel extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               hasVideo
-                  ? 'Review the extracted recipe details below before publishing.'
-                  : 'ABCDish will upload the video, create a draft, then ask you to verify it.',
+                  ? text.raw(
+                      'Review the extracted recipe details below before publishing.',
+                    )
+                  : text.raw(
+                      'ABCDish will upload the video, create a draft, then ask you to verify it.',
+                    ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             if (videoUrl.isNotEmpty) ...[
@@ -703,10 +749,10 @@ class _OwnVideoUploadPanel extends StatelessWidget {
                   : const Icon(Icons.upload_file),
               label: Text(
                 extracting
-                    ? 'Uploading...'
+                    ? text.raw('Uploading...')
                     : hasVideo
-                    ? 'Replace Video'
-                    : 'Upload Video & Extract',
+                    ? text.raw('Replace Video')
+                    : text.raw('Upload Video & Extract'),
               ),
             ),
           ],
@@ -716,7 +762,7 @@ class _OwnVideoUploadPanel extends StatelessWidget {
   }
 }
 
-class _TrailerPickerCard extends StatelessWidget {
+class _TrailerPickerCard extends ConsumerWidget {
   const _TrailerPickerCard({
     required this.hasLocalTrailer,
     required this.trailerUrl,
@@ -734,8 +780,9 @@ class _TrailerPickerCard extends StatelessWidget {
   bool get _hasTrailer => hasLocalTrailer || trailerUrl.trim().isNotEmpty;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
+    final text = ref.watch(appTextProvider);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -753,7 +800,7 @@ class _TrailerPickerCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    '30 sec feed trailer',
+                    text.raw('30 sec feed trailer'),
                     style: Theme.of(context).textTheme.titleSmall!.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -763,7 +810,7 @@ class _TrailerPickerCard extends StatelessWidget {
                   IconButton(
                     onPressed: onRemoveTrailer,
                     icon: const Icon(Icons.close),
-                    tooltip: 'Remove trailer',
+                    tooltip: text.raw('Remove trailer'),
                   ),
               ],
             ),
@@ -771,11 +818,17 @@ class _TrailerPickerCard extends StatelessWidget {
             Text(
               _hasTrailer
                   ? hasLocalTrailer
-                        ? 'New trailer selected. It will upload when you publish.'
-                        : 'Trailer attached for feed autoplay.'
+                        ? text.raw(
+                            'New trailer selected. It will upload when you publish.',
+                          )
+                        : text.raw('Trailer attached for feed autoplay.')
                   : requiredTrailer
-                  ? 'Required for own videos until automatic trailer extraction is enabled.'
-                  : 'Optional. ABCDish can show a text promo until a trailer is ready.',
+                  ? text.raw(
+                      'Required for own videos until automatic trailer extraction is enabled.',
+                    )
+                  : text.raw(
+                      'Optional. ABCDish can show a text promo until a trailer is ready.',
+                    ),
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -784,7 +837,11 @@ class _TrailerPickerCard extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: onPickTrailer,
                 icon: const Icon(Icons.video_library_outlined),
-                label: Text(_hasTrailer ? 'Change Trailer' : 'Choose Trailer'),
+                label: Text(
+                  _hasTrailer
+                      ? text.raw('Change Trailer')
+                      : text.raw('Choose Trailer'),
+                ),
               ),
             ),
           ],

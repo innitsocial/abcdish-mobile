@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/auth_provider.dart';
 import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/shopping_list_provider.dart';
 import 'package:abcdish/screens/partner_stores.dart';
+import 'package:abcdish/services/meal_service.dart';
 import 'package:abcdish/services/video_access_service.dart';
 import 'package:abcdish/utils/app_snack_bar.dart';
 import 'package:abcdish/utils/auth_navigation.dart';
@@ -24,12 +26,22 @@ class MealDetailsScreen extends ConsumerStatefulWidget {
 class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
+  late Meal _meal;
+  bool _isLoadingRecipe = false;
+  String? _recipeLoadError;
 
   bool _isVideoReady = false;
   bool _isInitialisingVideo = false;
   bool _checkingVideoAccess = false;
   bool _videoAccessAllowed = false;
   String? _videoAccessMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _meal = widget.meal;
+    _loadFullRecipe();
+  }
 
   @override
   void dispose() {
@@ -60,10 +72,12 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       return false;
     }
 
-    final url = widget.meal.videoUrl.trim();
+    final url = _meal.videoUrl.trim();
     if (url.isEmpty) {
       setState(() {
-        _videoAccessMessage = 'Video is not available for this recipe yet.';
+        _videoAccessMessage = ref
+            .read(appTextProvider)
+            .raw('Video is not available for this recipe yet.');
       });
       return false;
     }
@@ -107,7 +121,9 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       setState(() {
         _isInitialisingVideo = false;
         _isVideoReady = false;
-        _videoAccessMessage = 'Unable to load cooking video.';
+        _videoAccessMessage = ref
+            .read(appTextProvider)
+            .raw('Unable to load cooking video.');
       });
       return false;
     }
@@ -129,7 +145,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
       try {
         final access = await VideoAccessService.instance.recordVideoView(
-          widget.meal.id,
+          _meal.id,
         );
 
         if (!mounted) return;
@@ -150,8 +166,8 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
           _videoAccessAllowed = true;
           _checkingVideoAccess = false;
           _videoAccessMessage = access.membershipStatus == 'ACTIVE'
-              ? 'Unlimited videos enabled'
-              : '${access.remainingViews} videos remaining this month';
+              ? ref.read(appTextProvider).raw('Unlimited videos enabled')
+              : '${access.remainingViews} ${ref.read(appTextProvider).raw('videos remaining this month')}';
         });
       } catch (error) {
         debugPrint('Video access error: $error');
@@ -162,11 +178,17 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
         setState(() {
           _checkingVideoAccess = false;
-          _videoAccessMessage = 'Unable to check video access.';
+          _videoAccessMessage = ref
+              .read(appTextProvider)
+              .raw('Unable to check video access.');
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Unable to check video access. $error')),
+          SnackBar(
+            content: Text(
+              '${ref.read(appTextProvider).raw('Unable to check video access.')} $error',
+            ),
+          ),
         );
         return;
       }
@@ -195,9 +217,9 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          if (widget.meal.imageUrl.trim().isNotEmpty)
+          if (_meal.imageUrl.trim().isNotEmpty)
             Image.network(
-              widget.meal.imageUrl,
+              _meal.imageUrl,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => _videoFallback(),
             )
@@ -210,7 +232,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                 : FilledButton.icon(
                     onPressed: _checkAccessAndPlay,
                     icon: const Icon(Icons.play_arrow),
-                    label: const Text('Watch & Cook'),
+                    label: Text(ref.read(appTextProvider).raw('Watch & Cook')),
                   ),
           ),
         ],
@@ -252,13 +274,39 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
     ref
         .read(shoppingListProvider.notifier)
-        .addIngredients(widget.meal.ingredients);
+        .addIngredients(_meal.ingredients);
 
     ScaffoldMessenger.of(context).showSnackBar(
       successSnackBar(
-        '${widget.meal.ingredients.length} ingredients added for Recipe ID ${widget.meal.recipeCode}',
+        '${_meal.ingredients.length} ${ref.read(appTextProvider).raw('ingredients added for Recipe ID')} ${_meal.recipeCode}',
       ),
     );
+  }
+
+  Future<void> _loadFullRecipe() async {
+    if (_meal.isContestEntry) return;
+
+    setState(() {
+      _isLoadingRecipe = true;
+      _recipeLoadError = null;
+    });
+
+    try {
+      final fullMeal = await MealService.instance.fetchMeal(_meal.id);
+      if (!mounted) return;
+
+      setState(() {
+        _meal = fullMeal;
+        _isLoadingRecipe = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoadingRecipe = false;
+        _recipeLoadError = error.toString();
+      });
+    }
   }
 
   void _openPartnerStores() {
@@ -269,8 +317,9 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final meal = widget.meal;
+    final meal = _meal;
     final colorScheme = Theme.of(context).colorScheme;
+    final text = ref.watch(appTextProvider);
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final isFavorite = favoriteMeals.any((item) => item.id == meal.id);
 
@@ -290,22 +339,24 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
               ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
                 wasAdded
-                    ? successSnackBar('Recipe saved')
-                    : errorSnackBar('Recipe removed from saved recipes'),
+                    ? successSnackBar(text.raw('Recipe saved'))
+                    : errorSnackBar(
+                        text.raw('Recipe removed from saved recipes'),
+                      ),
               );
             },
             icon: Icon(
               isFavorite ? Icons.bookmark : Icons.bookmark_border,
               color: isFavorite ? colorScheme.primary : null,
             ),
-            tooltip: isFavorite ? 'Saved' : 'Save recipe',
+            tooltip: isFavorite ? text.saved : text.raw('Save recipe'),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _addAllIngredients,
         icon: const Icon(Icons.shopping_cart),
-        label: const Text('Add ingredients'),
+        label: Text(text.raw('Add ingredients')),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 96),
@@ -347,7 +398,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                     children: [
                       _buildInfoChip(
                         icon: Icons.confirmation_number_outlined,
-                        label: 'Recipe ID ${meal.recipeCode}',
+                        label: '${text.raw('Recipe ID')} ${meal.recipeCode}',
                       ),
                       _buildInfoChip(
                         icon: Icons.schedule,
@@ -364,21 +415,34 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
+                  if (_isLoadingRecipe)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: LinearProgressIndicator(),
+                    ),
+                  if (_recipeLoadError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        text.raw('Unable to load full recipe details.'),
+                        style: TextStyle(color: colorScheme.error),
+                      ),
+                    ),
                   Card(
                     child: ListTile(
                       leading: Icon(
                         Icons.storefront_outlined,
                         color: colorScheme.primary,
                       ),
-                      title: Text('Order ingredients'),
+                      title: Text(text.raw('Order ingredients')),
                       subtitle: Text(
-                        'Tell a partner store: Recipe ID ${meal.recipeCode}',
+                        '${text.raw('Tell a partner store')}: ${text.raw('Recipe ID')} ${meal.recipeCode}',
                       ),
                       trailing: const Icon(Icons.chevron_right),
                       onTap: _openPartnerStores,
                     ),
                   ),
-                  _buildSectionTitle('Ingredients'),
+                  _buildSectionTitle(text.raw('Ingredients')),
                   ...meal.ingredients.map(
                     (ingredient) => Card(
                       child: ListTile(
@@ -405,7 +469,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               successSnackBar(
-                                '$ingredient added to shopping list',
+                                '$ingredient ${text.raw('added to shopping list')}',
                               ),
                             );
                           },
@@ -413,7 +477,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                       ),
                     ),
                   ),
-                  _buildSectionTitle('Cooking Steps'),
+                  _buildSectionTitle(text.raw('Cooking Steps')),
                   ...meal.steps.asMap().entries.map((entry) {
                     final index = entry.key + 1;
                     final step = entry.value;

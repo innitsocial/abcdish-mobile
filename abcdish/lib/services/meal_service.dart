@@ -1,5 +1,6 @@
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/services/api_client.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MealService {
   MealService._internal();
@@ -26,6 +27,11 @@ class MealService {
     return data.map((item) {
       return Meal.fromJson(item as Map<String, dynamic>);
     }).toList();
+  }
+
+  Future<Meal> fetchMeal(String id) async {
+    final response = await _apiClient.get('/api/meals/$id');
+    return Meal.fromJson(response as Map<String, dynamic>);
   }
 
   Future<Meal> createMeal({
@@ -160,12 +166,16 @@ class MealService {
     required String sourceUrl,
     String titleHint = '',
   }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final languageCode = prefs.getString('app_language') ?? 'en';
+
     final response = await _apiClient.post(
       '/api/meals/draft',
       body: {
         'sourceType': sourceType,
         'sourceUrl': sourceUrl,
         'titleHint': titleHint,
+        'languageCode': languageCode,
       },
     );
 

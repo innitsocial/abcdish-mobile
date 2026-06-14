@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/meals_provider.dart';
 import 'package:abcdish/screens/creator_upload.dart';
@@ -39,14 +40,14 @@ class CreatorRecipesScreen extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Remove recipe?'),
+        title: Text(ref.read(appTextProvider).raw('Remove recipe?')),
         content: Text(
-          'This removes "${meal.title}" from ABCDish and hides it from the cooking feed.',
+          '${ref.read(appTextProvider).raw('This removes')} "${meal.title}" ${ref.read(appTextProvider).raw('from ABCDish and hides it from the cooking feed.')}',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(ref.read(appTextProvider).raw('Cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -54,7 +55,7 @@ class CreatorRecipesScreen extends ConsumerWidget {
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
             ),
-            child: const Text('Remove'),
+            child: Text(ref.read(appTextProvider).raw('Remove')),
           ),
         ],
       ),
@@ -68,16 +69,24 @@ class CreatorRecipesScreen extends ConsumerWidget {
       ref.invalidate(managedMealsProvider);
 
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('"${meal.title}" removed')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '"${meal.title}" ${ref.read(appTextProvider).raw('removed')}',
+          ),
+        ),
+      );
     } catch (error) {
       if (!context.mounted) return;
       final handled = await redirectToLoginForAuthError(context, ref, error);
       if (handled || !context.mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to remove recipe: $error')),
+        SnackBar(
+          content: Text(
+            '${ref.read(appTextProvider).raw('Unable to remove recipe')}: $error',
+          ),
+        ),
       );
     }
   }
@@ -85,9 +94,10 @@ class CreatorRecipesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mealsAsync = ref.watch(managedMealsProvider);
+    final text = ref.watch(appTextProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Manage Recipes')),
+      appBar: AppBar(title: Text(text.raw('Manage Recipes'))),
       body: mealsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stackTrace) => Center(
@@ -99,13 +109,15 @@ class CreatorRecipesScreen extends ConsumerWidget {
                 const Icon(Icons.video_library_outlined, size: 56),
                 const SizedBox(height: 12),
                 Text(
-                  'No recipe videos to manage yet',
+                  text.raw('No recipe videos to manage yet'),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'If you have already uploaded a recipe, tap retry. Otherwise add your first recipe video.',
+                  text.raw(
+                    'If you have already uploaded a recipe, tap retry. Otherwise add your first recipe video.',
+                  ),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
@@ -118,12 +130,12 @@ class CreatorRecipesScreen extends ConsumerWidget {
                     OutlinedButton.icon(
                       onPressed: () => ref.invalidate(managedMealsProvider),
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
+                      label: Text(text.raw('Retry')),
                     ),
                     FilledButton.icon(
                       onPressed: () => _addRecipe(context, ref),
                       icon: const Icon(Icons.add),
-                      label: const Text('Add Recipe'),
+                      label: Text(text.addRecipe),
                     ),
                   ],
                 ),
@@ -141,7 +153,7 @@ class CreatorRecipesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _addRecipe(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add Recipe'),
+        label: Text(text.addRecipe),
       ),
     );
   }
@@ -160,7 +172,7 @@ class CreatorRecipesScreen extends ConsumerWidget {
   }
 }
 
-class _CreatorRecipeList extends StatelessWidget {
+class _CreatorRecipeList extends ConsumerWidget {
   const _CreatorRecipeList({
     required this.meals,
     required this.onAddRecipe,
@@ -174,7 +186,9 @@ class _CreatorRecipeList extends StatelessWidget {
   final void Function(Meal meal) onDeleteRecipe;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final text = ref.watch(appTextProvider);
+
     if (meals.isEmpty) {
       return Center(
         child: Padding(
@@ -185,12 +199,14 @@ class _CreatorRecipeList extends StatelessWidget {
               const Icon(Icons.video_library_outlined, size: 56),
               const SizedBox(height: 12),
               Text(
-                'No recipe videos yet',
+                text.raw('No recipe videos yet'),
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 6),
               Text(
-                'Upload an ABCDish-managed cooking video to start building the recipe catalog.',
+                text.raw(
+                  'Upload an ABCDish-managed cooking video to start building the recipe catalog.',
+                ),
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
@@ -198,7 +214,7 @@ class _CreatorRecipeList extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onAddRecipe,
                 icon: const Icon(Icons.add),
-                label: const Text('Add Recipe'),
+                label: Text(text.addRecipe),
               ),
             ],
           ),
@@ -269,7 +285,7 @@ class _CreatorRecipeList extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => onEditRecipe(meal),
                     icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Edit'),
+                    label: Text(text.raw('Edit')),
                   ),
                   TextButton.icon(
                     onPressed: () => onDeleteRecipe(meal),
@@ -278,7 +294,7 @@ class _CreatorRecipeList extends StatelessWidget {
                       color: Theme.of(context).colorScheme.error,
                     ),
                     label: Text(
-                      'Remove',
+                      text.raw('Remove'),
                       style: TextStyle(
                         color: Theme.of(context).colorScheme.error,
                       ),

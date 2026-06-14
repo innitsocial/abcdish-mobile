@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/providers/auth_provider.dart';
+import 'package:abcdish/utils/app_snack_bar.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -17,11 +19,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String _otp = '';
   bool _otpRequested = false;
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    ).showSnackBar(isError ? errorSnackBar(message) : successSnackBar(message));
   }
 
   Future<void> _requestOtp() async {
@@ -40,10 +42,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       setState(() {
         _otpRequested = true;
       });
-      _showMessage('Email code sent');
+      _showMessage(ref.read(appTextProvider).emailCodeSent);
     } else {
       _showMessage(
-        ref.read(authProvider).errorMessage ?? 'Could not send code',
+        ref.read(authProvider).errorMessage ??
+            ref.read(appTextProvider).couldNotSendCode,
+        isError: true,
       );
     }
   }
@@ -61,20 +65,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!mounted) return;
 
     if (success) {
-      _showMessage('Logged in successfully');
+      _showMessage(ref.read(appTextProvider).loggedInSuccessfully);
       Navigator.of(context).pop();
     } else {
-      _showMessage(ref.read(authProvider).errorMessage ?? 'Invalid code');
+      _showMessage(
+        ref.read(authProvider).errorMessage ??
+            ref.read(appTextProvider).invalidCode,
+        isError: true,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final text = ref.watch(appTextProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: Text(text.login)),
       body: Stack(
         children: [
           Center(
@@ -95,21 +104,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          'Login with email',
+                          text.loginWithEmail,
                           style: Theme.of(context).textTheme.headlineSmall,
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'We will send a 6-digit code to your email.',
+                          text.emailCodeHelp,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 24),
                         TextFormField(
                           initialValue: _email,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            prefixIcon: Icon(Icons.email_outlined),
+                          decoration: InputDecoration(
+                            labelText: text.email,
+                            prefixIcon: const Icon(Icons.email_outlined),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: _otpRequested
@@ -120,7 +129,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             if (value == null ||
                                 value.trim().isEmpty ||
                                 !value.contains('@')) {
-                              return 'Enter a valid email address';
+                              return text.emailInvalid;
                             }
                             return null;
                           },
@@ -136,15 +145,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         if (_otpRequested) ...[
                           const SizedBox(height: 12),
                           TextFormField(
-                            decoration: const InputDecoration(
-                              labelText: '6-digit code',
-                              prefixIcon: Icon(Icons.pin_outlined),
+                            decoration: InputDecoration(
+                              labelText: text.sixDigitCode,
+                              prefixIcon: const Icon(Icons.pin_outlined),
                             ),
                             keyboardType: TextInputType.number,
                             textInputAction: TextInputAction.done,
                             validator: (value) {
                               if (value == null || value.trim().length != 6) {
-                                return 'Enter the 6-digit code';
+                                return text.codeInvalid;
                               }
                               return null;
                             },
@@ -168,7 +177,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     });
                                   },
                             icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Change email'),
+                            label: Text(text.changeEmail),
                           ),
                         ],
                         const SizedBox(height: 24),
@@ -181,7 +190,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ? _verifyOtp
                                 : _requestOtp,
                             child: Text(
-                              _otpRequested ? 'Verify & Login' : 'Send Code',
+                              _otpRequested
+                                  ? text.verifyAndLogin
+                                  : text.sendCode,
                             ),
                           ),
                         ),

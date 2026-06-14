@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/models/category.dart';
 import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/l10n/app_text.dart';
 import 'package:abcdish/providers/categories_provider.dart';
 import 'package:abcdish/providers/filters_provider.dart';
 import 'package:abcdish/screens/meal_details.dart';
@@ -70,11 +71,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     final categoriesAsync = ref.watch(categoriesProvider);
     final filters = ref.watch(filtersProvider);
+    final text = ref.watch(appTextProvider);
 
     return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) =>
-          Center(child: Text('Failed to load categories: $error')),
+      error: (error, stackTrace) => Center(
+        child: Text('${text.raw('Failed to load categories')}: $error'),
+      ),
       data: (categories) {
         final filteredCategories = _filterCategories(categories, filters);
         final filteredMeals = _filterMeals(categories, filters);
@@ -96,7 +99,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ),
                   cursorColor: Theme.of(context).colorScheme.primary,
                   decoration: InputDecoration(
-                    hintText: 'Search recipes, ingredients or categories...',
+                    hintText: text.raw(
+                      'Search recipes, ingredients or categories...',
+                    ),
                     hintStyle: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -240,7 +245,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     List<Meal> meals,
   ) {
     if (categories.isEmpty && meals.isEmpty) {
-      return const Center(child: Text('No recipes or categories found.'));
+      final text = ref.read(appTextProvider);
+      return Center(child: Text(text.raw('No recipes or categories found.')));
     }
 
     return ListView(
@@ -249,7 +255,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       children: [
         if (categories.isNotEmpty) ...[
           Text(
-            'Categories',
+            ref.read(appTextProvider).raw('Categories'),
             style: Theme.of(
               context,
             ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
@@ -278,7 +284,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ],
         if (meals.isNotEmpty) ...[
           Text(
-            'Recipes',
+            ref.read(appTextProvider).recipes,
             style: Theme.of(
               context,
             ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.bold),
@@ -305,6 +311,7 @@ class _FilterBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(filtersProvider.notifier);
+    final text = ref.watch(appTextProvider);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -313,14 +320,14 @@ class _FilterBar extends ConsumerWidget {
         children: [
           FilterChip(
             selected: filters.glutenFree,
-            label: const Text('Gluten-free'),
+            label: Text(text.raw('Gluten-free')),
             avatar: const Icon(Icons.grass_outlined, size: 18),
             onSelected: (_) => notifier.toggleDietary(DietaryFilter.glutenFree),
           ),
           const SizedBox(width: 8),
           FilterChip(
             selected: filters.lactoseFree,
-            label: const Text('Lactose-free'),
+            label: Text(text.raw('Lactose-free')),
             avatar: const Icon(Icons.local_drink_outlined, size: 18),
             onSelected: (_) =>
                 notifier.toggleDietary(DietaryFilter.lactoseFree),
@@ -328,38 +335,50 @@ class _FilterBar extends ConsumerWidget {
           const SizedBox(width: 8),
           FilterChip(
             selected: filters.vegetarian,
-            label: const Text('Vegetarian'),
+            label: Text(text.raw('Vegetarian')),
             avatar: const Icon(Icons.eco_outlined, size: 18),
             onSelected: (_) => notifier.toggleDietary(DietaryFilter.vegetarian),
           ),
           const SizedBox(width: 8),
           FilterChip(
             selected: filters.vegan,
-            label: const Text('Vegan'),
+            label: Text(text.raw('Vegan')),
             avatar: const Icon(Icons.spa_outlined, size: 18),
             onSelected: (_) => notifier.toggleDietary(DietaryFilter.vegan),
           ),
           const SizedBox(width: 8),
-          _TimeFilterChip(label: 'Under 15', minutes: 15, filters: filters),
+          _TimeFilterChip(
+            label: text.raw('Under 15'),
+            minutes: 15,
+            filters: filters,
+          ),
           const SizedBox(width: 8),
-          _TimeFilterChip(label: 'Under 30', minutes: 30, filters: filters),
+          _TimeFilterChip(
+            label: text.raw('Under 30'),
+            minutes: 30,
+            filters: filters,
+          ),
           const SizedBox(width: 8),
-          _TimeFilterChip(label: 'Under 60', minutes: 60, filters: filters),
+          _TimeFilterChip(
+            label: text.raw('Under 60'),
+            minutes: 60,
+            filters: filters,
+          ),
           const SizedBox(width: 8),
           _DifficultyFilterChip(
-            label: 'Simple',
+            label: text.raw('Simple'),
             difficulty: DifficultyFilter.simple,
             filters: filters,
           ),
           const SizedBox(width: 8),
           _DifficultyFilterChip(
-            label: 'Medium',
+            label: text.raw('Medium'),
             difficulty: DifficultyFilter.challenging,
             filters: filters,
           ),
           const SizedBox(width: 8),
           _DifficultyFilterChip(
-            label: 'Difficult',
+            label: text.raw('Difficult'),
             difficulty: DifficultyFilter.hard,
             filters: filters,
           ),
@@ -367,7 +386,7 @@ class _FilterBar extends ConsumerWidget {
             const SizedBox(width: 8),
             ActionChip(
               avatar: const Icon(Icons.close, size: 18),
-              label: const Text('Clear'),
+              label: Text(text.raw('Clear')),
               onPressed: notifier.clear,
             ),
           ],
