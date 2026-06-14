@@ -23,8 +23,8 @@ class AppBottomNav extends StatelessWidget {
           label: 'Feed',
         ),
         NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
+          icon: Icon(Icons.restaurant_menu_outlined),
+          selectedIcon: Icon(Icons.restaurant_menu),
           label: 'Recipes',
         ),
         NavigationDestination(
@@ -33,8 +33,8 @@ class AppBottomNav extends StatelessWidget {
           label: 'Search',
         ),
         NavigationDestination(
-          icon: Icon(Icons.favorite_border),
-          selectedIcon: Icon(Icons.favorite),
+          icon: Icon(Icons.bookmark_border),
+          selectedIcon: Icon(Icons.bookmark),
           label: 'Saved',
         ),
         NavigationDestination(

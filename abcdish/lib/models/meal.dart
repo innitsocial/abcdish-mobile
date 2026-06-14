@@ -7,6 +7,7 @@ enum Affordability { affordable, pricey, luxurious }
 class Meal {
   const Meal({
     required this.id,
+    required this.recipeCode,
     required this.categories,
     required this.title,
     required this.imageUrl,
@@ -39,6 +40,8 @@ class Meal {
   });
 
   final String id;
+
+  final String recipeCode;
 
   final List<String> categories;
 
@@ -104,8 +107,14 @@ class Meal {
   final String moderationReason;
 
   factory Meal.fromJson(Map<String, dynamic> json) {
+    final id = (json['id'] ?? json['mealId']).toString();
+    final numericId = int.tryParse(id);
+
     return Meal(
-      id: (json['id'] ?? json['mealId']).toString(),
+      id: id,
+      recipeCode:
+          json['recipeCode']?.toString() ??
+          (numericId == null ? id : (10000 + numericId).toString()),
       categories: List<String>.from(json['categories'] ?? []),
       title: json['title'] ?? '',
       imageUrl: json['imageUrl'] ?? '',

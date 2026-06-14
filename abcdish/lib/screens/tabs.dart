@@ -12,6 +12,7 @@ import 'package:abcdish/screens/meals.dart';
 import 'package:abcdish/screens/profile.dart';
 import 'package:abcdish/screens/search.dart';
 import 'package:abcdish/screens/shopping_list.dart';
+import 'package:abcdish/utils/auth_navigation.dart';
 import 'package:abcdish/widgets/app_bottom_nav.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
@@ -31,6 +32,9 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
   }
 
   Future<void> _openCreatorUpload() async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !mounted) return;
+
     final published = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (ctx) => const CreatorUploadScreen()),
     );

@@ -5,7 +5,7 @@ import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/meals_provider.dart';
 import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/services/meal_service.dart';
-import 'package:abcdish/utils/youtube_video.dart';
+import 'package:abcdish/utils/auth_navigation.dart';
 
 class CreatorRecipesScreen extends ConsumerWidget {
   const CreatorRecipesScreen({super.key});
@@ -15,6 +15,9 @@ class CreatorRecipesScreen extends ConsumerWidget {
     WidgetRef ref,
     Meal meal,
   ) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !context.mounted) return;
+
     final updated = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (ctx) => CreatorUploadScreen(meal: meal)),
     );
@@ -30,12 +33,15 @@ class CreatorRecipesScreen extends ConsumerWidget {
     WidgetRef ref,
     Meal meal,
   ) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !context.mounted) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove recipe?'),
         content: Text(
-          'This removes "${meal.title}" from ABCDish. The YouTube video itself will not be deleted.',
+          'This removes "${meal.title}" from ABCDish and hides it from the cooking feed.',
         ),
         actions: [
           TextButton(
@@ -67,6 +73,9 @@ class CreatorRecipesScreen extends ConsumerWidget {
       ).showSnackBar(SnackBar(content: Text('"${meal.title}" removed')));
     } catch (error) {
       if (!context.mounted) return;
+      final handled = await redirectToLoginForAuthError(context, ref, error);
+      if (handled || !context.mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Unable to remove recipe: $error')),
       );
@@ -84,9 +93,41 @@ class CreatorRecipesScreen extends ConsumerWidget {
         error: (error, stackTrace) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(
-              'Could not load published recipes.\n\n$error',
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.video_library_outlined, size: 56),
+                const SizedBox(height: 12),
+                Text(
+                  'No recipe videos to manage yet',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'If you have already uploaded a recipe, tap retry. Otherwise add your first recipe video.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    OutlinedButton.icon(
+                      onPressed: () => ref.invalidate(managedMealsProvider),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Retry'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: () => _addRecipe(context, ref),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Recipe'),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
@@ -106,6 +147,9 @@ class CreatorRecipesScreen extends ConsumerWidget {
   }
 
   Future<void> _addRecipe(BuildContext context, WidgetRef ref) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !context.mounted) return;
+
     final published = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (ctx) => const CreatorUploadScreen()),
     );
@@ -141,8 +185,14 @@ class _CreatorRecipeList extends StatelessWidget {
               const Icon(Icons.video_library_outlined, size: 56),
               const SizedBox(height: 12),
               Text(
-                'No recipes published yet',
+                'No recipe videos yet',
                 style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Upload an ABCDish-managed cooking video to start building the recipe catalog.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 16),
               FilledButton.icon(
@@ -162,12 +212,7 @@ class _CreatorRecipeList extends StatelessWidget {
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final meal = meals[index];
-        final youtubeVideoId = extractYouTubeVideoId(meal.videoUrl);
-        final thumbnailUrl = meal.imageUrl.trim().isNotEmpty
-            ? meal.imageUrl.trim()
-            : youtubeVideoId == null
-            ? ''
-            : youtubeThumbnailUrl(youtubeVideoId);
+        final thumbnailUrl = meal.imageUrl.trim();
 
         return Card(
           clipBehavior: Clip.antiAlias,

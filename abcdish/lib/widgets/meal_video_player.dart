@@ -2,9 +2,6 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-import 'package:abcdish/utils/youtube_video.dart';
-import 'package:abcdish/widgets/youtube_recipe_player.dart';
-
 class MealVideoPlayer extends StatefulWidget {
   const MealVideoPlayer({super.key, required this.videoUrl});
 
@@ -83,11 +80,6 @@ class _MealVideoPlayerState extends State<MealVideoPlayer> {
   Widget build(BuildContext context) {
     final chewieController = _chewieController;
     final videoController = _videoPlayerController;
-    final youtubeVideoId = extractYouTubeVideoId(widget.videoUrl);
-
-    if (youtubeVideoId != null) {
-      return YoutubeRecipePlayer(videoId: youtubeVideoId);
-    }
 
     if (chewieController != null && videoController != null) {
       return AspectRatio(

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:video_player/video_player.dart';
 
+import 'package:abcdish/screens/login.dart';
+import 'package:abcdish/services/api_client.dart';
 import 'package:abcdish/services/story_service.dart';
 
 class CreateStoryScreen extends StatefulWidget {
@@ -120,7 +122,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         maxDuration: const Duration(seconds: 60),
       );
 
-      if (video == null || !mounted) return;      
+      if (video == null || !mounted) return;
 
       setState(() {
         _loadingPreview = true;
@@ -192,9 +194,16 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
       Navigator.of(context).pop(story);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please login to post a story. $error')),
-      );
+      if (error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to post story. $error')));
     } finally {
       if (mounted) {
         setState(() {

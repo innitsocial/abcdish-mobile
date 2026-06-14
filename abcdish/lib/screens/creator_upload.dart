@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/screens/login.dart';
+import 'package:abcdish/services/api_client.dart';
 import 'package:abcdish/services/meal_service.dart';
-import 'package:abcdish/utils/youtube_video.dart';
-
-enum _UploadMode { youtube, ownVideo }
 
 class CreatorUploadScreen extends StatefulWidget {
   const CreatorUploadScreen({super.key, this.meal});
@@ -39,7 +38,6 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
   String _promoTrailerSubtitle = '';
   String? _localTrailerPath;
   String? _localSourceVideoPath;
-  _UploadMode _uploadMode = _UploadMode.youtube;
   String _complexity = Complexity.simple.name;
   bool _glutenFree = false;
   bool _lactoseFree = false;
@@ -65,9 +63,6 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       _promoTrailerSubtitle = meal.promoTrailerSubtitle;
       _promoTitleController.text = meal.promoTrailerTitle;
       _promoSubtitleController.text = meal.promoTrailerSubtitle;
-      _uploadMode = isYouTubeUrl(meal.videoUrl)
-          ? _UploadMode.youtube
-          : _UploadMode.ownVideo;
       _durationController.text = meal.duration.toString();
       _categoriesController.text = meal.categories.join(', ');
       _ingredientsController.text = meal.ingredients.join('\n');
@@ -133,39 +128,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
     setState(() {
       _localTrailerPath = null;
       _trailerUrl = '';
-      if (_uploadMode == _UploadMode.youtube) {
-        _trailerType = 'PROMO_TEXT';
-      }
     });
-  }
-
-  void _usePromoTrailer() {
-    final title = _titleController.text.trim();
-    final description = _descriptionController.text.trim();
-
-    setState(() {
-      _localTrailerPath = null;
-      _trailerUrl = '';
-      _trailerType = 'PROMO_TEXT';
-      _promoTrailerTitle = title.isEmpty ? 'New ABCDish recipe' : title;
-      _promoTrailerSubtitle = description.isEmpty
-          ? 'Tap to cook the full recipe'
-          : description;
-      _promoTitleController.text = _promoTrailerTitle;
-      _promoSubtitleController.text = _promoTrailerSubtitle;
-    });
-  }
-
-  Future<void> _extractYouTubeDraft() async {
-    final sourceUrl = _videoUrlController.text.trim();
-    if (!isYouTubeUrl(sourceUrl)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Add a valid YouTube link first.')),
-      );
-      return;
-    }
-
-    await _extractDraft(sourceType: 'YOUTUBE', sourceUrl: sourceUrl);
   }
 
   Future<void> _pickOwnVideoAndExtractDraft() async {
@@ -185,6 +148,9 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       await _extractDraft(sourceType: 'OWN_VIDEO', sourceUrl: videoUrl);
     } catch (error) {
       if (!mounted) return;
+      if (await _redirectToLoginIfNeeded(error)) return;
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Unable to upload and read video. $error')),
       );
@@ -225,6 +191,9 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       );
     } catch (error) {
       if (!mounted) return;
+      if (await _redirectToLoginIfNeeded(error)) return;
+      if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Unable to create draft: $error')));
@@ -275,22 +244,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    final hasVideoTrailer =
-        _localTrailerPath != null || _trailerUrl.trim().isNotEmpty;
-    if (_uploadMode == _UploadMode.youtube &&
-        _trailerType != 'PROMO_TEXT' &&
-        !hasVideoTrailer) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Add a trailer or use a text promo for YouTube recipes.',
-          ),
-        ),
-      );
-      return;
-    }
-
-    if (_uploadMode == _UploadMode.ownVideo && _videoUrl.trim().isEmpty) {
+    if (_videoUrl.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Upload your cooking video first.')),
       );
@@ -308,7 +262,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
           : await MealService.instance.uploadRecipeTrailer(_localTrailerPath!);
       final resolvedTrailerType = resolvedTrailerUrl.trim().isNotEmpty
           ? 'VIDEO'
-          : _trailerType;
+          : 'PROMO_TEXT';
       final promoTitle = resolvedTrailerType == 'PROMO_TEXT'
           ? (_promoTitleController.text.trim().isEmpty
                 ? _title
@@ -321,7 +275,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
           : '';
 
       if (_isEditing) {
-        meal = await MealService.instance.updateYouTubeMeal(
+        meal = await MealService.instance.updateMeal(
           id: widget.meal!.id,
           title: _title,
           description: _description,
@@ -343,7 +297,7 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
           vegetarian: _vegetarian,
         );
       } else {
-        meal = await MealService.instance.createYouTubeMeal(
+        meal = await MealService.instance.createMeal(
           title: _title,
           description: _description,
           imageUrl: _imageUrl,
@@ -373,6 +327,8 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
+      if (await _redirectToLoginIfNeeded(error)) return;
+      if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Unable to publish recipe: $error')),
@@ -400,14 +356,21 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
     return '"$_title" was saved and is pending review';
   }
 
+  Future<bool> _redirectToLoginIfNeeded(Object error) async {
+    if (error is! ApiException ||
+        (error.statusCode != 401 && error.statusCode != 403)) {
+      return false;
+    }
+
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final youtubeVideoId = extractYouTubeVideoId(_videoUrlController.text);
-    final previewUrl = _imageUrlController.text.trim().isNotEmpty
-        ? _imageUrlController.text.trim()
-        : youtubeVideoId == null
-        ? ''
-        : youtubeThumbnailUrl(youtubeVideoId);
+    final previewUrl = _imageUrlController.text.trim();
 
     return Scaffold(
       appBar: AppBar(title: Text(_isEditing ? 'Edit Recipe' : 'Add Recipe')),
@@ -457,68 +420,21 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                'Choose YouTube for existing creator videos or upload your own cooking video.',
+                'Upload and manage ABCDish-owned cooking videos. No external video links.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 12),
-              SegmentedButton<_UploadMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: _UploadMode.youtube,
-                    icon: Icon(Icons.smart_display),
-                    label: Text('YouTube'),
-                  ),
-                  ButtonSegment(
-                    value: _UploadMode.ownVideo,
-                    icon: Icon(Icons.upload_file),
-                    label: Text('Own video'),
-                  ),
-                ],
-                selected: {_uploadMode},
-                onSelectionChanged: _isEditing
-                    ? null
-                    : (selection) {
-                        setState(() {
-                          _uploadMode = selection.first;
-                          _trailerType = _uploadMode == _UploadMode.youtube
-                              ? 'PROMO_TEXT'
-                              : 'VIDEO';
-                        });
-                      },
-              ),
-              const SizedBox(height: 12),
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: _uploadMode == _UploadMode.youtube
-                    ? _YouTubeUploadPanel(
-                        key: const ValueKey('youtube-upload'),
-                        controller: _videoUrlController,
-                        extracting: _isExtractingDraft,
-                        trailerType: _trailerType,
-                        promoTitleController: _promoTitleController,
-                        promoSubtitleController: _promoSubtitleController,
-                        onExtractDraft: _extractYouTubeDraft,
-                        onUsePromoTrailer: _usePromoTrailer,
-                        onPromoTitleChanged: (value) {
-                          _promoTrailerTitle = value;
-                        },
-                        onPromoSubtitleChanged: (value) {
-                          _promoTrailerSubtitle = value;
-                        },
-                      )
-                    : _OwnVideoUploadPanel(
-                        key: const ValueKey('own-video-upload'),
-                        videoUrl: _videoUrlController.text.trim(),
-                        hasLocalVideo: _localSourceVideoPath != null,
-                        extracting: _isExtractingDraft,
-                        onPickVideo: _pickOwnVideoAndExtractDraft,
-                      ),
+              _OwnVideoUploadPanel(
+                videoUrl: _videoUrlController.text.trim(),
+                hasLocalVideo: _localSourceVideoPath != null,
+                extracting: _isExtractingDraft,
+                onPickVideo: _pickOwnVideoAndExtractDraft,
               ),
               const SizedBox(height: 12),
               _TrailerPickerCard(
                 hasLocalTrailer: _localTrailerPath != null,
                 trailerUrl: _trailerUrl,
-                requiredTrailer: _uploadMode == _UploadMode.ownVideo,
+                requiredTrailer: true,
                 onPickTrailer: _pickTrailer,
                 onRemoveTrailer: _removeTrailer,
               ),
@@ -542,10 +458,6 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
                 validator: (_) {
                   final videoUrl = _videoUrlController.text.trim();
                   if (videoUrl.isEmpty) return 'Add a cooking video first';
-                  if (_uploadMode == _UploadMode.youtube &&
-                      !isYouTubeUrl(videoUrl)) {
-                    return 'Use a valid YouTube watch, shorts, or youtu.be link';
-                  }
                   return null;
                 },
                 onSaved: (_) => _videoUrl = _videoUrlController.text.trim(),
@@ -720,100 +632,8 @@ class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
   }
 }
 
-class _YouTubeUploadPanel extends StatelessWidget {
-  const _YouTubeUploadPanel({
-    super.key,
-    required this.controller,
-    required this.extracting,
-    required this.trailerType,
-    required this.promoTitleController,
-    required this.promoSubtitleController,
-    required this.onExtractDraft,
-    required this.onUsePromoTrailer,
-    required this.onPromoTitleChanged,
-    required this.onPromoSubtitleChanged,
-  });
-
-  final TextEditingController controller;
-  final bool extracting;
-  final String trailerType;
-  final TextEditingController promoTitleController;
-  final TextEditingController promoSubtitleController;
-  final VoidCallback onExtractDraft;
-  final VoidCallback onUsePromoTrailer;
-  final ValueChanged<String> onPromoTitleChanged;
-  final ValueChanged<String> onPromoSubtitleChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextFormField(
-              controller: controller,
-              decoration: const InputDecoration(
-                labelText: 'YouTube video link',
-                prefixIcon: Icon(Icons.smart_display),
-              ),
-              keyboardType: TextInputType.url,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: extracting ? null : onExtractDraft,
-              icon: extracting
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome),
-              label: Text(extracting ? 'Extracting...' : 'AI Extract Details'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: onUsePromoTrailer,
-              icon: const Icon(Icons.text_fields),
-              label: const Text('Use Text Promo Trailer'),
-            ),
-            if (trailerType == 'PROMO_TEXT') ...[
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: promoTitleController,
-                decoration: const InputDecoration(
-                  labelText: 'Promo trailer title',
-                  prefixIcon: Icon(Icons.title),
-                ),
-                onChanged: onPromoTitleChanged,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: promoSubtitleController,
-                decoration: const InputDecoration(
-                  labelText: 'Promo trailer subtitle',
-                  prefixIcon: Icon(Icons.subtitles_outlined),
-                ),
-                onChanged: onPromoSubtitleChanged,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _OwnVideoUploadPanel extends StatelessWidget {
   const _OwnVideoUploadPanel({
-    super.key,
     required this.videoUrl,
     required this.hasLocalVideo,
     required this.extracting,
@@ -955,7 +775,7 @@ class _TrailerPickerCard extends StatelessWidget {
                         : 'Trailer attached for feed autoplay.'
                   : requiredTrailer
                   ? 'Required for own videos until automatic trailer extraction is enabled.'
-                  : 'Optional. You can use a text promo trailer for YouTube recipes.',
+                  : 'Optional. ABCDish can show a text promo until a trailer is ready.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),

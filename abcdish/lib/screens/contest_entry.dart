@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/models/contest.dart';
 import 'package:abcdish/services/contest_service.dart';
+import 'package:abcdish/utils/auth_navigation.dart';
 
-class ContestEntryScreen extends StatefulWidget {
+class ContestEntryScreen extends ConsumerStatefulWidget {
   const ContestEntryScreen({super.key, required this.contest});
 
   final Contest contest;
 
   @override
-  State<ContestEntryScreen> createState() => _ContestEntryScreenState();
+  ConsumerState<ContestEntryScreen> createState() => _ContestEntryScreenState();
 }
 
-class _ContestEntryScreenState extends State<ContestEntryScreen> {
+class _ContestEntryScreenState extends ConsumerState<ContestEntryScreen> {
   final _formKey = GlobalKey<FormState>();
   String _title = '';
   String _videoUrl = '';
@@ -20,6 +22,10 @@ class _ContestEntryScreenState extends State<ContestEntryScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !mounted) return;
+
     _formKey.currentState!.save();
 
     setState(() {
@@ -46,6 +52,9 @@ class _ContestEntryScreenState extends State<ContestEntryScreen> {
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;
+      final handled = await redirectToLoginForAuthError(context, ref, error);
+      if (handled || !mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Entry submission failed: $error')),
       );

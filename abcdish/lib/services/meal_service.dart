@@ -28,7 +28,7 @@ class MealService {
     }).toList();
   }
 
-  Future<Meal> createYouTubeMeal({
+  Future<Meal> createMeal({
     required String title,
     required String description,
     required String imageUrl,
@@ -75,7 +75,7 @@ class MealService {
     return Meal.fromJson(response as Map<String, dynamic>);
   }
 
-  Future<Meal> updateYouTubeMeal({
+  Future<Meal> updateMeal({
     required String id,
     required String title,
     required String description,

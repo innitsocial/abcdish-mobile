@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/shopping_list_provider.dart';
 import 'package:abcdish/screens/partner_stores.dart';
+import 'package:abcdish/utils/app_snack_bar.dart';
 
 class ShoppingListScreen extends ConsumerWidget {
   const ShoppingListScreen({super.key});
@@ -45,9 +46,9 @@ class ShoppingListScreen extends ConsumerWidget {
                 onPressed: () {
                   ref.read(shoppingListProvider.notifier).clearList();
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Shopping list cleared')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(errorSnackBar('Shopping list cleared'));
                 },
                 icon: const Icon(Icons.delete_sweep),
                 label: const Text('Clear'),
@@ -96,7 +97,7 @@ class ShoppingListScreen extends ConsumerWidget {
 
                   ScaffoldMessenger.of(
                     context,
-                  ).showSnackBar(SnackBar(content: Text('$item removed')));
+                  ).showSnackBar(errorSnackBar('$item removed'));
                 },
                 child: Card(
                   margin: const EdgeInsets.only(bottom: 8),

@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
+import 'package:abcdish/providers/language_provider.dart';
+import 'package:abcdish/providers/theme_mode_provider.dart';
 import 'package:abcdish/screens/creator_recipes.dart';
-import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
@@ -222,25 +223,11 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.admin_panel_settings_outlined),
-                title: const Text('Role'),
-                subtitle: Text(session.role),
-              ),
-            ),
-            const SizedBox(height: 12),
             _ProfileTile(
               icon: Icons.video_call,
               title: 'Creator Studio',
               subtitle: 'Manage, edit, remove, and publish recipes',
               onTap: () => _open(context, const CreatorRecipesScreen()),
-            ),
-            _ProfileTile(
-              icon: Icons.add_circle_outline,
-              title: 'Add Recipe',
-              subtitle: 'Publish a YouTube recipe with ingredients and steps',
-              onTap: () => _open(context, const CreatorUploadScreen()),
             ),
             _ProfileTile(
               icon: Icons.storefront,
@@ -265,10 +252,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: Icon(Icons.privacy_tip_outlined),
               title: Text('Privacy Policy'),
             ),
-            const ListTile(
-              leading: Icon(Icons.settings_outlined),
-              title: Text('Settings'),
-            ),
+            const _ThemeSettingsCard(),
             const SizedBox(height: 12),
             Card(
               child: ListTile(
@@ -315,6 +299,105 @@ class _ProfileTile extends StatelessWidget {
         subtitle: Text(subtitle),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
+      ),
+    );
+  }
+}
+
+class _ThemeSettingsCard extends ConsumerWidget {
+  const _ThemeSettingsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final appLanguage = ref.watch(languageProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.settings_outlined, color: colorScheme.primary),
+                const SizedBox(width: 12),
+                Text(
+                  'Settings',
+                  style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Appearance',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                SegmentedButton<ThemeMode>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode_outlined),
+                      label: Text('Light'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      icon: Icon(Icons.dark_mode_outlined),
+                      label: Text('Dark'),
+                    ),
+                  ],
+                  selected: {themeMode},
+                  onSelectionChanged: (selection) {
+                    ref
+                        .read(themeModeProvider.notifier)
+                        .setThemeMode(selection.first);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Language',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                DropdownButton<AppLanguage>(
+                  value: appLanguage,
+                  items: supportedAppLanguages
+                      .map(
+                        (language) => DropdownMenuItem(
+                          value: language,
+                          child: Text(language.nativeName),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (language) {
+                    if (language == null) return;
+                    ref.read(languageProvider.notifier).setLanguage(language);
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'AI recipe text and generated video metadata will use this language.',
+              style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

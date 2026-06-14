@@ -61,4 +61,36 @@ class StoryService {
 
     return '';
   }
+
+  Future<void> deleteStory(String id) async {
+    await _apiClient.delete('/api/stories/$id');
+  }
+
+  Future<Story> recordView(String id) async {
+    final response = await _apiClient.post('/api/stories/$id/views');
+    return Story.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<Story> likeStory(String id) async {
+    final response = await _apiClient.post('/api/stories/$id/likes');
+    return Story.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<Story> unlikeStory(String id) async {
+    final response = await _apiClient.delete('/api/stories/$id/likes');
+    return Story.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<List<StoryViewer>> fetchViewers(String id) async {
+    final response = await _apiClient.get('/api/stories/$id/viewers');
+
+    if (response is List) {
+      return response
+          .whereType<Map<String, dynamic>>()
+          .map(StoryViewer.fromJson)
+          .toList();
+    }
+
+    return [];
+  }
 }

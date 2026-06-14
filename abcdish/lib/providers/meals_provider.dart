@@ -8,5 +8,7 @@ final mealsProvider = FutureProvider<List<Meal>>((ref) async {
 });
 
 final managedMealsProvider = FutureProvider<List<Meal>>((ref) async {
-  return MealService.instance.fetchManagedMeals();
+  return MealService.instance.fetchManagedMeals().timeout(
+    const Duration(seconds: 12),
+  );
 });

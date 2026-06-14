@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +9,7 @@ import 'package:video_player/video_player.dart';
 import 'package:abcdish/models/feed_comment.dart';
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/models/story.dart';
+import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/feed_provider.dart';
 import 'package:abcdish/screens/create_story.dart';
@@ -14,7 +17,7 @@ import 'package:abcdish/screens/meal_details.dart';
 import 'package:abcdish/services/safety_service.dart';
 import 'package:abcdish/services/social_service.dart';
 import 'package:abcdish/services/story_service.dart';
-import 'package:abcdish/utils/youtube_video.dart';
+import 'package:abcdish/utils/auth_navigation.dart';
 
 class FoodFeedScreen extends ConsumerStatefulWidget {
   const FoodFeedScreen({super.key});
@@ -67,6 +70,9 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
   }
 
   Future<void> _createStory() async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !mounted) return;
+
     final story = await Navigator.of(context).push<Story>(
       MaterialPageRoute(builder: (context) => const CreateStoryScreen()),
     );
@@ -91,6 +97,9 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
   }
 
   Future<void> _toggleLike(Meal meal) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue) return;
+
     try {
       if (meal.likedByCurrentUser) {
         await SocialService.instance.unlikeMeal(meal.id);
@@ -100,11 +109,14 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
 
       ref.invalidate(feedProvider);
     } catch (error) {
-      _showSocialError(error);
+      await _showSocialError(error);
     }
   }
 
   Future<void> _toggleFollow(Meal meal) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue) return;
+
     try {
       if (meal.followedByCurrentUser) {
         await SocialService.instance.unfollowCreator(meal.creatorKey);
@@ -114,11 +126,14 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
 
       ref.invalidate(feedProvider);
     } catch (error) {
-      _showSocialError(error);
+      await _showSocialError(error);
     }
   }
 
   Future<void> _shareMeal(Meal meal) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue) return;
+
     try {
       await SocialService.instance.shareMeal(meal.id);
       ref.invalidate(feedProvider);
@@ -128,7 +143,7 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
         SnackBar(content: Text('Share link ready for ${meal.title}')),
       );
     } catch (error) {
-      _showSocialError(error);
+      await _showSocialError(error);
     }
   }
 
@@ -148,6 +163,9 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
   }
 
   Future<void> _reportMeal(Meal meal, String reason) async {
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue) return;
+
     try {
       await SafetyService.instance.reportContent(
         targetType: 'meal',
@@ -161,7 +179,7 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
         const SnackBar(content: Text('Thanks. We will review this post.')),
       );
     } catch (error) {
-      _showSocialError(error);
+      await _showSocialError(error);
     }
   }
 
@@ -317,75 +335,80 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
     );
   }
 
+  Future<bool> _deleteStory(Story story) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove story?'),
+        content: Text('This removes "${story.title}" from ABCDish stories.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return false;
+
+    try {
+      await StoryService.instance.deleteStory(story.id);
+
+      if (!mounted) return false;
+      setState(() {
+        _stories.removeWhere((item) => item.id == story.id);
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Story removed')));
+      return true;
+    } catch (error) {
+      if (!mounted) return false;
+      final handled = await redirectToLoginForAuthError(context, ref, error);
+      if (handled || !mounted) return false;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to remove story. $error')));
+      return false;
+    }
+  }
+
   void _showUserStory(Story story) {
+    final currentUserId = ref
+        .read(appSessionProvider)
+        .maybeWhen(data: (session) => session?.userId ?? 0, orElse: () => 0);
+    final initialIndex = _stories.indexWhere((item) => item.id == story.id);
+
     showDialog<void>(
       context: context,
       builder: (context) => Dialog.fullscreen(
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _StoryFullVideo(story: story),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.35),
-                    Colors.black.withValues(alpha: 0.85),
-                  ],
-                ),
-              ),
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _CreatorAvatar(name: story.creatorName),
-                        const SizedBox(width: 10),
-                        Text(
-                          story.creatorName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const Spacer(),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    Text(
-                      story.title,
-                      style: Theme.of(context).textTheme.headlineSmall!
-                          .copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    if (story.caption.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        story.caption,
-                        maxLines: 4,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.86),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ],
+        child: _UserStoryViewer(
+          stories: List<Story>.from(_stories),
+          initialIndex: initialIndex < 0 ? 0 : initialIndex,
+          currentUserId: currentUserId,
+          onDeleteStory: _deleteStory,
+          onStoryChanged: (updatedStory) {
+            if (!mounted) return;
+            setState(() {
+              final storyIndex = _stories.indexWhere(
+                (item) => item.id == updatedStory.id,
+              );
+              if (storyIndex >= 0) {
+                _stories[storyIndex] = updatedStory;
+              }
+            });
+          },
         ),
       ),
     );
@@ -399,20 +422,25 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
       builder: (context) => _CommentsSheet(
         meal: meal,
         onChanged: () => ref.invalidate(feedProvider),
+        onAuthRequired: () => ensureLoggedIn(context, ref),
       ),
     );
   }
 
-  void _showSocialError(Object error) {
+  Future<void> _showSocialError(Object error) async {
     if (!mounted) return;
 
+    final handled = await redirectToLoginForAuthError(context, ref, error);
+    if (handled || !mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please login to use this feature. $error')),
+      SnackBar(content: Text('Could not complete this action. $error')),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(appSessionProvider);
     final feedAsync = ref.watch(feedProvider);
 
     return feedAsync.when(
@@ -493,6 +521,492 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _UserStoryViewer extends StatefulWidget {
+  const _UserStoryViewer({
+    required this.stories,
+    required this.initialIndex,
+    required this.currentUserId,
+    required this.onDeleteStory,
+    required this.onStoryChanged,
+  });
+
+  final List<Story> stories;
+  final int initialIndex;
+  final int currentUserId;
+  final Future<bool> Function(Story story) onDeleteStory;
+  final void Function(Story story) onStoryChanged;
+
+  @override
+  State<_UserStoryViewer> createState() => _UserStoryViewerState();
+}
+
+class _UserStoryViewerState extends State<_UserStoryViewer> {
+  static const _storyDuration = Duration(seconds: 7);
+  static const _tickDuration = Duration(milliseconds: 80);
+
+  late final List<Story> _stories;
+  late int _index;
+  Timer? _timer;
+  double _progress = 0;
+  bool _paused = false;
+  final Set<String> _viewedStoryIds = {};
+
+  Story get _story => _stories[_index];
+
+  bool get _isOwnStory =>
+      _story.userId != 0 && _story.userId == widget.currentUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _stories = List<Story>.from(widget.stories);
+    _index = widget.initialIndex.clamp(0, _stories.length - 1).toInt();
+    _recordView();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(_tickDuration, (_) {
+      if (!mounted || _paused) return;
+
+      setState(() {
+        _progress +=
+            _tickDuration.inMilliseconds / _storyDuration.inMilliseconds;
+      });
+
+      if (_progress >= 1) {
+        _nextStory();
+      }
+    });
+  }
+
+  void _recordView() {
+    if (widget.currentUserId == 0 || _viewedStoryIds.contains(_story.id)) {
+      return;
+    }
+
+    _viewedStoryIds.add(_story.id);
+    StoryService.instance.recordView(_story.id).then(_replaceStory).catchError((
+      error,
+    ) {
+      debugPrint('Story view tracking failed: $error');
+    });
+  }
+
+  void _replaceStory(Story story) {
+    if (!mounted) return;
+
+    setState(() {
+      final storyIndex = _stories.indexWhere((item) => item.id == story.id);
+      if (storyIndex >= 0) {
+        _stories[storyIndex] = story;
+      }
+    });
+
+    widget.onStoryChanged(story);
+  }
+
+  void _nextStory() {
+    if (_index >= _stories.length - 1) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+
+    setState(() {
+      _index += 1;
+      _progress = 0;
+    });
+    _recordView();
+  }
+
+  void _previousStory() {
+    if (_index == 0) {
+      setState(() => _progress = 0);
+      return;
+    }
+
+    setState(() {
+      _index -= 1;
+      _progress = 0;
+    });
+    _recordView();
+  }
+
+  Future<void> _toggleLike() async {
+    if (widget.currentUserId == 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Log in to like stories')));
+      return;
+    }
+
+    final current = _story;
+    final optimistic = current.copyWith(
+      likedByCurrentUser: !current.likedByCurrentUser,
+      likeCount: (current.likeCount + (current.likedByCurrentUser ? -1 : 1))
+          .clamp(0, 1 << 31)
+          .toInt(),
+    );
+    _replaceStory(optimistic);
+
+    try {
+      final updated = current.likedByCurrentUser
+          ? await StoryService.instance.unlikeStory(current.id)
+          : await StoryService.instance.likeStory(current.id);
+      _replaceStory(updated);
+    } catch (error) {
+      _replaceStory(current);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not update story like. $error')),
+      );
+    }
+  }
+
+  Future<void> _deleteCurrentStory() async {
+    final removed = await widget.onDeleteStory(_story);
+    if (!removed || !mounted) return;
+
+    _stories.removeAt(_index);
+    if (_stories.isEmpty) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+
+    setState(() {
+      if (_index >= _stories.length) {
+        _index = _stories.length - 1;
+      }
+      _progress = 0;
+    });
+  }
+
+  void _showViewers() {
+    setState(() => _paused = true);
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => _StoryViewersSheet(story: _story),
+    ).whenComplete(() {
+      if (mounted) setState(() => _paused = false);
+    });
+  }
+
+  void _handleTap(TapUpDetails details) {
+    final width = MediaQuery.sizeOf(context).width;
+    if (details.localPosition.dx < width * 0.35) {
+      _previousStory();
+    } else {
+      _nextStory();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final story = _story;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapUp: _handleTap,
+      onLongPressStart: (_) => setState(() => _paused = true),
+      onLongPressEnd: (_) => setState(() => _paused = false),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 180),
+            child: _StoryFullVideo(key: ValueKey(story.id), story: story),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.35),
+                  Colors.transparent,
+                  Colors.black.withValues(alpha: 0.82),
+                ],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _StoryProgressBars(
+                    count: _stories.length,
+                    activeIndex: _index,
+                    activeProgress: _progress.clamp(0, 1),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _CreatorAvatar(name: story.creatorName),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              story.creatorName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              '${_relativeTime(story.createdAt)} ago',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.74),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_isOwnStory)
+                        IconButton(
+                          onPressed: _deleteCurrentStory,
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.white,
+                          ),
+                          tooltip: 'Remove story',
+                        ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const Icon(Icons.close, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    story.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (story.caption.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      story.caption,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.86),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      IconButton.filled(
+                        onPressed: _toggleLike,
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withValues(alpha: 0.14),
+                          foregroundColor: story.likedByCurrentUser
+                              ? Colors.pinkAccent
+                              : Colors.white,
+                        ),
+                        icon: Icon(
+                          story.likedByCurrentUser
+                              ? Icons.favorite
+                              : Icons.favorite_border,
+                        ),
+                        tooltip: 'Like story',
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _compactCount(story.likeCount),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      if (_isOwnStory)
+                        TextButton.icon(
+                          onPressed: _showViewers,
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.white.withValues(
+                              alpha: 0.14,
+                            ),
+                          ),
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: Text(_compactCount(story.viewCount)),
+                        )
+                      else
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.visibility_outlined,
+                              color: Colors.white.withValues(alpha: 0.78),
+                              size: 20,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _compactCount(story.viewCount),
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.84),
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (_paused)
+            const Center(
+              child: Icon(Icons.pause_circle, color: Colors.white70, size: 72),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StoryProgressBars extends StatelessWidget {
+  const _StoryProgressBars({
+    required this.count,
+    required this.activeIndex,
+    required this.activeProgress,
+  });
+
+  final int count;
+  final int activeIndex;
+  final double activeProgress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(count, (index) {
+        final value = index < activeIndex
+            ? 1.0
+            : index == activeIndex
+            ? activeProgress
+            : 0.0;
+
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: index == count - 1 ? 0 : 4),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: value,
+                minHeight: 3,
+                backgroundColor: Colors.white.withValues(alpha: 0.26),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _StoryViewersSheet extends StatelessWidget {
+  const _StoryViewersSheet({required this.story});
+
+  final Story story;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: FutureBuilder<List<StoryViewer>>(
+        future: StoryService.instance.fetchViewers(story.id),
+        builder: (context, snapshot) {
+          final viewers = snapshot.data ?? const <StoryViewer>[];
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Story viewers',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge!.copyWith(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${_compactCount(story.viewCount)} views',
+                  style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (snapshot.connectionState == ConnectionState.waiting)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: CircularProgressIndicator(),
+                    ),
+                  )
+                else if (snapshot.hasError)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Text('Could not load viewers. ${snapshot.error}'),
+                  )
+                else if (viewers.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Text('No one has viewed this story yet.'),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: viewers.length,
+                      separatorBuilder: (context, index) =>
+                          const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final viewer = viewers[index];
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: _CreatorAvatar(name: viewer.name),
+                          title: Text(viewer.name),
+                          subtitle: Text(
+                            'Viewed ${_relativeTime(viewer.viewedAt)} ago',
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -754,7 +1268,7 @@ class _StoryCard extends StatelessWidget {
   }
 }
 
-class _SocialMealPost extends ConsumerWidget {
+class _SocialMealPost extends ConsumerStatefulWidget {
   const _SocialMealPost({
     required this.meal,
     required this.creatorName,
@@ -786,7 +1300,51 @@ class _SocialMealPost extends ConsumerWidget {
   final VoidCallback onMoreOptions;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SocialMealPost> createState() => _SocialMealPostState();
+}
+
+class _SocialMealPostState extends ConsumerState<_SocialMealPost>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _likeBurstController;
+  late final Animation<double> _likeBurstScale;
+  late final Animation<double> _likeBurstOpacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _likeBurstController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 620),
+    );
+    _likeBurstScale = Tween<double>(begin: 0.35, end: 1.12).animate(
+      CurvedAnimation(
+        parent: _likeBurstController,
+        curve: const Interval(0, 0.55, curve: Curves.easeOutBack),
+      ),
+    );
+    _likeBurstOpacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween<double>(begin: 0, end: 1), weight: 25),
+      TweenSequenceItem(tween: ConstantTween<double>(1), weight: 35),
+      TweenSequenceItem(tween: Tween<double>(begin: 1, end: 0), weight: 40),
+    ]).animate(_likeBurstController);
+  }
+
+  @override
+  void dispose() {
+    _likeBurstController.dispose();
+    super.dispose();
+  }
+
+  void _handleDoubleTapLike() {
+    _likeBurstController.forward(from: 0);
+    if (!widget.isLiked) {
+      widget.onLike();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final meal = widget.meal;
     final favoriteMeals = ref.watch(favoriteMealsProvider);
     final isSaved = favoriteMeals.any((item) => item.id == meal.id);
     final colorScheme = Theme.of(context).colorScheme;
@@ -799,9 +1357,7 @@ class _SocialMealPost extends ConsumerWidget {
         ? '30 sec trailer'
         : videoUrl.isEmpty
         ? null
-        : extractYouTubeVideoId(videoUrl) != null
-        ? 'YouTube recipe'
-        : 'Linked video';
+        : 'ABCDish video';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -815,14 +1371,14 @@ class _SocialMealPost extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
             child: Row(
               children: [
-                _CreatorAvatar(name: creatorName),
+                _CreatorAvatar(name: widget.creatorName),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        creatorName,
+                        widget.creatorName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -837,15 +1393,15 @@ class _SocialMealPost extends ConsumerWidget {
                   ),
                 ),
                 TextButton.icon(
-                  onPressed: onFollow,
+                  onPressed: widget.onFollow,
                   icon: Icon(
-                    isFollowing ? Icons.check : Icons.person_add_alt_1,
+                    widget.isFollowing ? Icons.check : Icons.person_add_alt_1,
                     size: 16,
                   ),
-                  label: Text(isFollowing ? 'Following' : 'Follow'),
+                  label: Text(widget.isFollowing ? 'Following' : 'Follow'),
                 ),
                 IconButton(
-                  onPressed: onMoreOptions,
+                  onPressed: widget.onMoreOptions,
                   icon: const Icon(Icons.more_horiz),
                   tooltip: 'Post options',
                 ),
@@ -856,8 +1412,9 @@ class _SocialMealPost extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
             child: _PostCaption(title: meal.title, caption: caption),
           ),
-          InkWell(
-            onTap: onOpenMeal,
+          GestureDetector(
+            onTap: widget.onOpenMeal,
+            onDoubleTap: _handleDoubleTapLike,
             child: AspectRatio(
               aspectRatio: 4 / 5,
               child: Stack(
@@ -903,7 +1460,34 @@ class _SocialMealPost extends ConsumerWidget {
                     left: 14,
                     right: 14,
                     bottom: 76,
-                    child: _OpenRecipeCta(onTap: onOpenMeal),
+                    child: _OpenRecipeCta(onTap: widget.onOpenMeal),
+                  ),
+                  Center(
+                    child: IgnorePointer(
+                      child: AnimatedBuilder(
+                        animation: _likeBurstController,
+                        builder: (context, child) {
+                          return Opacity(
+                            opacity: _likeBurstOpacity.value,
+                            child: Transform.scale(
+                              scale: _likeBurstScale.value,
+                              child: child,
+                            ),
+                          );
+                        },
+                        child: Icon(
+                          Icons.favorite,
+                          color: Colors.white,
+                          size: 108,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withValues(alpha: 0.28),
+                              blurRadius: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                   Positioned(
                     left: 0,
@@ -955,17 +1539,19 @@ class _SocialMealPost extends ConsumerWidget {
               children: [
                 _MetricPill(
                   icon: Icons.favorite,
-                  label: _compactCount(likeCount),
-                  color: isLiked ? Colors.redAccent : colorScheme.primary,
+                  label: _compactCount(widget.likeCount),
+                  color: widget.isLiked
+                      ? Colors.redAccent
+                      : colorScheme.primary,
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: onComment,
-                  child: Text('${_compactCount(commentCount)} comments'),
+                  onPressed: widget.onComment,
+                  child: Text('${_compactCount(widget.commentCount)} comments'),
                 ),
                 TextButton(
-                  onPressed: onShare,
-                  child: Text('${_compactCount(shareCount)} shares'),
+                  onPressed: widget.onShare,
+                  child: Text('${_compactCount(widget.shareCount)} shares'),
                 ),
               ],
             ),
@@ -977,24 +1563,26 @@ class _SocialMealPost extends ConsumerWidget {
               children: [
                 Expanded(
                   child: _PostActionButton(
-                    icon: isLiked ? Icons.favorite : Icons.favorite_border,
+                    icon: widget.isLiked
+                        ? Icons.favorite
+                        : Icons.favorite_border,
                     label: 'Like',
-                    color: isLiked ? Colors.redAccent : null,
-                    onPressed: onLike,
+                    color: widget.isLiked ? Colors.redAccent : null,
+                    onPressed: widget.onLike,
                   ),
                 ),
                 Expanded(
                   child: _PostActionButton(
                     icon: Icons.mode_comment_outlined,
                     label: 'Comment',
-                    onPressed: onComment,
+                    onPressed: widget.onComment,
                   ),
                 ),
                 Expanded(
                   child: _PostActionButton(
                     icon: Icons.share_outlined,
                     label: 'Share',
-                    onPressed: onShare,
+                    onPressed: widget.onShare,
                   ),
                 ),
                 Expanded(
@@ -1002,7 +1590,10 @@ class _SocialMealPost extends ConsumerWidget {
                     icon: isSaved ? Icons.bookmark : Icons.bookmark_border,
                     label: 'Save',
                     color: isSaved ? colorScheme.primary : null,
-                    onPressed: () {
+                    onPressed: () async {
+                      final canContinue = await ensureLoggedIn(context, ref);
+                      if (!canContinue || !context.mounted) return;
+
                       ref
                           .read(favoriteMealsProvider.notifier)
                           .toggleMealFavoriteStatus(meal);
@@ -1168,10 +1759,15 @@ class _MetricPill extends StatelessWidget {
 }
 
 class _CommentsSheet extends StatefulWidget {
-  const _CommentsSheet({required this.meal, required this.onChanged});
+  const _CommentsSheet({
+    required this.meal,
+    required this.onChanged,
+    required this.onAuthRequired,
+  });
 
   final Meal meal;
   final VoidCallback onChanged;
+  final Future<bool> Function() onAuthRequired;
 
   @override
   State<_CommentsSheet> createState() => _CommentsSheetState();
@@ -1209,6 +1805,9 @@ class _CommentsSheetState extends State<_CommentsSheet> {
     final comment = _controller.text.trim();
     if (comment.isEmpty) return;
 
+    final canContinue = await widget.onAuthRequired();
+    if (!canContinue || !mounted) return;
+
     setState(() {
       _submitting = true;
     });
@@ -1228,9 +1827,13 @@ class _CommentsSheetState extends State<_CommentsSheet> {
       widget.onChanged();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please login to comment. $error')),
-      );
+      if (isAuthError(error)) {
+        await widget.onAuthRequired();
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Could not add comment. $error')));
     } finally {
       if (mounted) {
         setState(() {
@@ -1415,14 +2018,6 @@ class _MealPreview extends StatelessWidget {
       );
     }
 
-    final youtubeVideoId = extractYouTubeVideoId(videoUrl);
-    if (youtubeVideoId != null) {
-      if (meal.trailerType == 'PROMO_TEXT') {
-        return _PromoTextTrailer(meal: meal);
-      }
-      return _YouTubeMealPreview(meal: meal, videoId: youtubeVideoId);
-    }
-
     return _AutoPlayVideoPreview(
       videoUrl: videoUrl,
       fallback: _MealImage(meal: meal, fit: BoxFit.cover),
@@ -1541,85 +2136,6 @@ class _PromoTextTrailer extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _YouTubeMealPreview extends StatelessWidget {
-  const _YouTubeMealPreview({required this.meal, required this.videoId});
-
-  final Meal meal;
-  final String videoId;
-
-  @override
-  Widget build(BuildContext context) {
-    final thumbnailUrl = meal.imageUrl.trim().isNotEmpty
-        ? meal.imageUrl.trim()
-        : youtubeThumbnailUrl(videoId);
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        Image.network(
-          thumbnailUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => _ImageFallback(),
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.black.withValues(alpha: 0.08),
-                Colors.black.withValues(alpha: 0.38),
-              ],
-            ),
-          ),
-        ),
-        Center(
-          child: Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.92),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.24),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.play_arrow, color: Colors.white, size: 34),
-          ),
-        ),
-        Positioned(
-          right: 12,
-          top: 12,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.56),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.smart_display, color: Colors.white, size: 15),
-                  SizedBox(width: 5),
-                  Text(
-                    'YouTube',
-                    style: TextStyle(color: Colors.white, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
@@ -1884,7 +2400,7 @@ class _AutoPlayVideoPreviewState extends State<_AutoPlayVideoPreview> {
 }
 
 class _StoryFullVideo extends StatefulWidget {
-  const _StoryFullVideo({required this.story});
+  const _StoryFullVideo({super.key, required this.story});
 
   final Story story;
 

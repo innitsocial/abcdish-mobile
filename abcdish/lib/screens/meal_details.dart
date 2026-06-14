@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:video_player/video_player.dart';
 
 import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/providers/auth_provider.dart';
 import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/shopping_list_provider.dart';
+import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/services/video_access_service.dart';
-import 'package:abcdish/utils/youtube_video.dart';
-import 'package:abcdish/widgets/youtube_recipe_player.dart';
+import 'package:abcdish/utils/app_snack_bar.dart';
+import 'package:abcdish/utils/auth_navigation.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
   const MealDetailsScreen({super.key, required this.meal});
@@ -66,16 +68,6 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       return false;
     }
 
-    final youtubeVideoId = extractYouTubeVideoId(url);
-    if (youtubeVideoId != null) {
-      setState(() {
-        _isVideoReady = true;
-        _isInitialisingVideo = false;
-        _videoAccessMessage = null;
-      });
-      return true;
-    }
-
     setState(() {
       _isInitialisingVideo = true;
       _videoAccessMessage = null;
@@ -126,6 +118,9 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       return;
     }
 
+    final canContinue = await ensureLoggedIn(context, ref);
+    if (!canContinue || !mounted) return;
+
     if (!_videoAccessAllowed) {
       setState(() {
         _checkingVideoAccess = true;
@@ -162,13 +157,16 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         debugPrint('Video access error: $error');
         if (!mounted) return;
 
+        final handled = await redirectToLoginForAuthError(context, ref, error);
+        if (handled || !mounted) return;
+
         setState(() {
           _checkingVideoAccess = false;
-          _videoAccessMessage = 'Please login to watch this video';
+          _videoAccessMessage = 'Unable to check video access.';
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please login to watch this video')),
+          SnackBar(content: Text('Unable to check video access. $error')),
         );
         return;
       }
@@ -184,11 +182,6 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
   Widget _buildVideoPlayer() {
     final controller = _videoController;
     final chewieController = _chewieController;
-    final youtubeVideoId = extractYouTubeVideoId(widget.meal.videoUrl);
-
-    if (_isVideoReady && _videoAccessAllowed && youtubeVideoId != null) {
-      return YoutubeRecipePlayer(videoId: youtubeVideoId);
-    }
 
     if (_isVideoReady && controller != null && chewieController != null) {
       return AspectRatio(
@@ -205,12 +198,6 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
           if (widget.meal.imageUrl.trim().isNotEmpty)
             Image.network(
               widget.meal.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => _videoFallback(),
-            )
-          else if (youtubeVideoId != null)
-            Image.network(
-              youtubeThumbnailUrl(youtubeVideoId),
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => _videoFallback(),
             )
@@ -256,17 +243,27 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     );
   }
 
-  void _addAllIngredients() {
+  Future<void> _addAllIngredients() async {
+    final isLoggedIn = ref.read(authProvider).isLoggedIn;
+    if (!isLoggedIn) {
+      await ensureLoggedIn(context, ref);
+      return;
+    }
+
     ref
         .read(shoppingListProvider.notifier)
         .addIngredients(widget.meal.ingredients);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '${widget.meal.ingredients.length} ingredients added to shopping list',
-        ),
+      successSnackBar(
+        '${widget.meal.ingredients.length} ingredients added for Recipe ID ${widget.meal.recipeCode}',
       ),
+    );
+  }
+
+  void _openPartnerStores() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const PartnerStoresScreen()),
     );
   }
 
@@ -282,26 +279,26 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         title: Text(meal.title),
         actions: [
           IconButton(
-            onPressed: () {
+            onPressed: () async {
+              final canContinue = await ensureLoggedIn(context, ref);
+              if (!canContinue || !context.mounted) return;
+
               final wasAdded = ref
                   .read(favoriteMealsProvider.notifier)
                   .toggleMealFavoriteStatus(meal);
 
               ScaffoldMessenger.of(context).clearSnackBars();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    wasAdded
-                        ? 'Recipe added to favourites'
-                        : 'Recipe removed from favourites',
-                  ),
-                ),
+                wasAdded
+                    ? successSnackBar('Recipe saved')
+                    : errorSnackBar('Recipe removed from saved recipes'),
               );
             },
             icon: Icon(
-              isFavorite ? Icons.favorite : Icons.favorite_border,
-              color: isFavorite ? Colors.red : null,
+              isFavorite ? Icons.bookmark : Icons.bookmark_border,
+              color: isFavorite ? colorScheme.primary : null,
             ),
+            tooltip: isFavorite ? 'Saved' : 'Save recipe',
           ),
         ],
       ),
@@ -349,6 +346,10 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                     runSpacing: 8,
                     children: [
                       _buildInfoChip(
+                        icon: Icons.confirmation_number_outlined,
+                        label: 'Recipe ID ${meal.recipeCode}',
+                      ),
+                      _buildInfoChip(
                         icon: Icons.schedule,
                         label: '${meal.duration} min',
                       ),
@@ -361,6 +362,21 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                         label: meal.affordability.name,
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.storefront_outlined,
+                        color: colorScheme.primary,
+                      ),
+                      title: Text('Order ingredients'),
+                      subtitle: Text(
+                        'Tell a partner store: Recipe ID ${meal.recipeCode}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: _openPartnerStores,
+                    ),
                   ),
                   _buildSectionTitle('Ingredients'),
                   ...meal.ingredients.map(
@@ -376,16 +392,20 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.add_shopping_cart),
-                          onPressed: () {
+                          onPressed: () async {
+                            final canContinue = await ensureLoggedIn(
+                              context,
+                              ref,
+                            );
+                            if (!canContinue || !context.mounted) return;
+
                             ref
                                 .read(shoppingListProvider.notifier)
                                 .addIngredient(ingredient);
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  '$ingredient added to shopping list',
-                                ),
+                              successSnackBar(
+                                '$ingredient added to shopping list',
                               ),
                             );
                           },
