@@ -11,6 +11,10 @@ class Meal {
     required this.title,
     required this.imageUrl,
     required this.videoUrl,
+    required this.trailerUrl,
+    required this.trailerType,
+    required this.promoTrailerTitle,
+    required this.promoTrailerSubtitle,
     required this.description,
     required this.ingredients,
     required this.steps,
@@ -30,6 +34,8 @@ class Meal {
     this.shareCount = 0,
     this.likedByCurrentUser = false,
     this.followedByCurrentUser = false,
+    this.moderationStatus = 'APPROVED',
+    this.moderationReason = '',
   });
 
   final String id;
@@ -43,6 +49,15 @@ class Meal {
 
   // Cooking video URL
   final String videoUrl;
+
+  // Short 30-second feed trailer hosted by ABCDish
+  final String trailerUrl;
+
+  final String trailerType;
+
+  final String promoTrailerTitle;
+
+  final String promoTrailerSubtitle;
 
   // Short recipe description
   final String description;
@@ -84,6 +99,10 @@ class Meal {
 
   final bool followedByCurrentUser;
 
+  final String moderationStatus;
+
+  final String moderationReason;
+
   factory Meal.fromJson(Map<String, dynamic> json) {
     return Meal(
       id: (json['id'] ?? json['mealId']).toString(),
@@ -91,6 +110,10 @@ class Meal {
       title: json['title'] ?? '',
       imageUrl: json['imageUrl'] ?? '',
       videoUrl: json['videoUrl'] ?? '',
+      trailerUrl: json['trailerUrl'] ?? '',
+      trailerType: json['trailerType'] ?? '',
+      promoTrailerTitle: json['promoTrailerTitle'] ?? '',
+      promoTrailerSubtitle: json['promoTrailerSubtitle'] ?? '',
       description: json['description'] ?? '',
       ingredients: List<String>.from(json['ingredients'] ?? []),
       steps: List<String>.from(json['steps'] ?? []),
@@ -116,6 +139,8 @@ class Meal {
       shareCount: json['shareCount'] ?? 0,
       likedByCurrentUser: json['likedByCurrentUser'] ?? false,
       followedByCurrentUser: json['followedByCurrentUser'] ?? false,
+      moderationStatus: json['moderationStatus'] ?? 'APPROVED',
+      moderationReason: json['moderationReason'] ?? '',
     );
   }
 }

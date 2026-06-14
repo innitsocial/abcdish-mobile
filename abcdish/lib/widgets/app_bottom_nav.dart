@@ -15,7 +15,7 @@ class AppBottomNav extends StatelessWidget {
     return NavigationBar(
       selectedIndex: currentIndex,
       onDestinationSelected: onTap,
-      labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.dynamic_feed_outlined),

@@ -7,6 +7,8 @@ class Story {
     required this.imageUrl,
     required this.videoUrl,
     required this.createdAt,
+    this.moderationStatus = 'APPROVED',
+    this.moderationReason = '',
   });
 
   final String id;
@@ -16,6 +18,8 @@ class Story {
   final String imageUrl;
   final String videoUrl;
   final DateTime createdAt;
+  final String moderationStatus;
+  final String moderationReason;
 
   factory Story.fromJson(Map<String, dynamic> json) {
     return Story(
@@ -28,6 +32,8 @@ class Story {
       createdAt:
           DateTime.tryParse(json['createdAt']?.toString() ?? '') ??
           DateTime.now(),
+      moderationStatus: json['moderationStatus'] ?? 'APPROVED',
+      moderationReason: json['moderationReason'] ?? '',
     );
   }
 }

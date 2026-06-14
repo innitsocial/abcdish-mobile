@@ -28,14 +28,20 @@ class ContestService {
     return [];
   }
 
-  Future<void> submitEntry({
+  Future<String> submitEntry({
     required String contestId,
     required String title,
     required String videoUrl,
   }) async {
-    await _apiClient.post(
+    final response = await _apiClient.post(
       '/api/contests/$contestId/entries',
       body: {'title': title, 'videoUrl': videoUrl},
     );
+
+    if (response is Map<String, dynamic>) {
+      return response['moderationStatus']?.toString() ?? 'PENDING_REVIEW';
+    }
+
+    return 'PENDING_REVIEW';
   }
 }

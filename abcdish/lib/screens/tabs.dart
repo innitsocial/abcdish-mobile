@@ -5,7 +5,7 @@ import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/filters_provider.dart';
 import 'package:abcdish/providers/meals_provider.dart';
 import 'package:abcdish/screens/contests.dart';
-import 'package:abcdish/screens/filters.dart';
+import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/food_feed.dart';
 import 'package:abcdish/screens/home.dart';
 import 'package:abcdish/screens/meals.dart';
@@ -13,7 +13,6 @@ import 'package:abcdish/screens/profile.dart';
 import 'package:abcdish/screens/search.dart';
 import 'package:abcdish/screens/shopping_list.dart';
 import 'package:abcdish/widgets/app_bottom_nav.dart';
-import 'package:abcdish/widgets/main_drawer.dart';
 
 class TabsScreen extends ConsumerStatefulWidget {
   const TabsScreen({super.key});
@@ -31,31 +30,20 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
     });
   }
 
-  void _setScreen(String identifier) async {
-    Navigator.of(context).pop();
+  Future<void> _openCreatorUpload() async {
+    final published = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (ctx) => const CreatorUploadScreen()),
+    );
 
-    if (identifier == 'filters') {
-      await Navigator.of(context).push<Map<Filter, bool>>(
-        MaterialPageRoute(builder: (ctx) => const FiltersScreen()),
-      );
-    }
-
-    if (identifier == 'favourites') {
-      setState(() {
-        _selectedPageIndex = 3;
-      });
-    }
-
-    if (identifier == 'feed') {
-      setState(() {
-        _selectedPageIndex = 0;
-      });
+    if (published == true) {
+      ref.invalidate(mealsProvider);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final mealsAsync = ref.watch(mealsProvider);
+    final filteredMealsAsync = ref.watch(filteredMealsProvider);
 
     return mealsAsync.when(
       loading: () =>
@@ -72,9 +60,10 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         ),
       ),
       data: (availableMeals) {
+        final visibleMeals = filteredMealsAsync.value ?? availableMeals;
         final pages = [
           ('Food Feed', const FoodFeedScreen()),
-          ('Recipes', HomeScreen(availableMeals: availableMeals)),
+          ('Recipes', HomeScreen(availableMeals: visibleMeals)),
           ('Search', SearchScreen(availableMeals: availableMeals)),
           ('Favourites', MealsScreen(meals: ref.watch(favoriteMealsProvider))),
           ('Contests', const ContestsScreen()),
@@ -86,8 +75,16 @@ class _TabsScreenState extends ConsumerState<TabsScreen> {
         final activePage = pages[_selectedPageIndex].$2;
 
         return Scaffold(
-          appBar: AppBar(title: Text(activePageTitle)),
-          drawer: MainDrawer(onSelectScreen: _setScreen),
+          appBar: AppBar(
+            title: Text(activePageTitle),
+            actions: [
+              IconButton(
+                onPressed: _openCreatorUpload,
+                icon: const Icon(Icons.add_circle_outline),
+                tooltip: 'Add recipe',
+              ),
+            ],
+          ),
           body: activePage,
           bottomNavigationBar: AppBottomNav(
             currentIndex: _selectedPageIndex,

@@ -31,11 +31,14 @@ class ApiClient {
     };
   }
 
-  Future<dynamic> get(String path) async {
+  Future<dynamic> get(
+    String path, {
+    Duration timeout = const Duration(seconds: 15),
+  }) async {
     final response = await _sendWithRefresh(
       () async => http
           .get(Uri.parse('$apiBaseUrl$path'), headers: await _headers())
-          .timeout(const Duration(seconds: 15)),
+          .timeout(timeout),
     );
 
     return _handleResponse(response);
@@ -131,11 +134,13 @@ class ApiClient {
     }
 
     try {
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/auth/refresh'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'refreshToken': refreshToken}),
-      );
+      final response = await http
+          .post(
+            Uri.parse('$apiBaseUrl/api/auth/refresh'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'refreshToken': refreshToken}),
+          )
+          .timeout(const Duration(seconds: 8));
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         return false;
@@ -221,6 +226,16 @@ class ApiClient {
       // Keep raw response body.
     }
 
-    throw Exception(message);
+    throw ApiException(statusCode: statusCode, message: message);
   }
+}
+
+class ApiException implements Exception {
+  const ApiException({required this.statusCode, required this.message});
+
+  final int statusCode;
+  final String message;
+
+  @override
+  String toString() => message.isEmpty ? 'HTTP $statusCode' : message;
 }

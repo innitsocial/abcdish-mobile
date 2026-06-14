@@ -80,6 +80,11 @@ class AuthService {
     await _apiClient.clearTokens();
   }
 
+  Future<void> deleteAccount() async {
+    await _apiClient.delete('/api/profile/me');
+    await _apiClient.clearTokens();
+  }
+
   Future<bool> isLoggedIn() async {
     final token = await _apiClient.getAccessToken();
     return token != null && token.isNotEmpty;

@@ -1,7 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'package:abcdish/models/meal.dart';
+import 'package:abcdish/services/meal_service.dart';
+import 'package:abcdish/utils/youtube_video.dart';
+
+enum _UploadMode { youtube, ownVideo }
 
 class CreatorUploadScreen extends StatefulWidget {
-  const CreatorUploadScreen({super.key});
+  const CreatorUploadScreen({super.key, this.meal});
+
+  final Meal? meal;
 
   @override
   State<CreatorUploadScreen> createState() => _CreatorUploadScreenState();
@@ -9,99 +18,956 @@ class CreatorUploadScreen extends StatefulWidget {
 
 class _CreatorUploadScreenState extends State<CreatorUploadScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _picker = ImagePicker();
+  final _videoUrlController = TextEditingController();
+  final _imageUrlController = TextEditingController();
+  final _durationController = TextEditingController(text: '30');
+  final _categoriesController = TextEditingController(text: 'cooking');
+  final _ingredientsController = TextEditingController();
+  final _stepsController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _promoTitleController = TextEditingController();
+  final _promoSubtitleController = TextEditingController();
   String _title = '';
   String _description = '';
   String _imageUrl = '';
   String _videoUrl = '';
-  String _mediaType = 'VIDEO';
+  String _trailerUrl = '';
+  String _trailerType = 'PROMO_TEXT';
+  String _promoTrailerTitle = '';
+  String _promoTrailerSubtitle = '';
+  String? _localTrailerPath;
+  String? _localSourceVideoPath;
+  _UploadMode _uploadMode = _UploadMode.youtube;
+  String _complexity = Complexity.simple.name;
+  bool _glutenFree = false;
+  bool _lactoseFree = false;
+  bool _vegan = false;
+  bool _vegetarian = false;
+  bool _isPublishing = false;
+  bool _isExtractingDraft = false;
 
-  void _submit() {
+  bool get _isEditing => widget.meal != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final meal = widget.meal;
+    if (meal != null) {
+      _titleController.text = meal.title;
+      _descriptionController.text = meal.description;
+      _videoUrlController.text = meal.videoUrl;
+      _imageUrlController.text = meal.imageUrl;
+      _trailerUrl = meal.trailerUrl;
+      _trailerType = meal.trailerType.isEmpty ? 'VIDEO' : meal.trailerType;
+      _promoTrailerTitle = meal.promoTrailerTitle;
+      _promoTrailerSubtitle = meal.promoTrailerSubtitle;
+      _promoTitleController.text = meal.promoTrailerTitle;
+      _promoSubtitleController.text = meal.promoTrailerSubtitle;
+      _uploadMode = isYouTubeUrl(meal.videoUrl)
+          ? _UploadMode.youtube
+          : _UploadMode.ownVideo;
+      _durationController.text = meal.duration.toString();
+      _categoriesController.text = meal.categories.join(', ');
+      _ingredientsController.text = meal.ingredients.join('\n');
+      _stepsController.text = meal.steps.join('\n');
+      _complexity = meal.complexity.name;
+      _glutenFree = meal.isGlutenFree;
+      _lactoseFree = meal.isLactoseFree;
+      _vegan = meal.isVegan;
+      _vegetarian = meal.isVegetarian;
+    }
+    _videoUrlController.addListener(_refreshPreview);
+    _imageUrlController.addListener(_refreshPreview);
+  }
+
+  @override
+  void dispose() {
+    _videoUrlController.dispose();
+    _imageUrlController.dispose();
+    _durationController.dispose();
+    _categoriesController.dispose();
+    _ingredientsController.dispose();
+    _stepsController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _promoTitleController.dispose();
+    _promoSubtitleController.dispose();
+    super.dispose();
+  }
+
+  void _refreshPreview() {
+    if (mounted) setState(() {});
+  }
+
+  List<String> _splitList(String value) {
+    return value
+        .split(RegExp(r'[\n,]'))
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
+  }
+
+  Future<void> _pickTrailer() async {
+    try {
+      final video = await _picker.pickVideo(
+        source: ImageSource.gallery,
+        maxDuration: const Duration(seconds: 30),
+      );
+
+      if (video == null || !mounted) return;
+
+      setState(() {
+        _localTrailerPath = video.path;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to choose trailer. $error')),
+      );
+    }
+  }
+
+  void _removeTrailer() {
+    setState(() {
+      _localTrailerPath = null;
+      _trailerUrl = '';
+      if (_uploadMode == _UploadMode.youtube) {
+        _trailerType = 'PROMO_TEXT';
+      }
+    });
+  }
+
+  void _usePromoTrailer() {
+    final title = _titleController.text.trim();
+    final description = _descriptionController.text.trim();
+
+    setState(() {
+      _localTrailerPath = null;
+      _trailerUrl = '';
+      _trailerType = 'PROMO_TEXT';
+      _promoTrailerTitle = title.isEmpty ? 'New ABCDish recipe' : title;
+      _promoTrailerSubtitle = description.isEmpty
+          ? 'Tap to cook the full recipe'
+          : description;
+      _promoTitleController.text = _promoTrailerTitle;
+      _promoSubtitleController.text = _promoTrailerSubtitle;
+    });
+  }
+
+  Future<void> _extractYouTubeDraft() async {
+    final sourceUrl = _videoUrlController.text.trim();
+    if (!isYouTubeUrl(sourceUrl)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add a valid YouTube link first.')),
+      );
+      return;
+    }
+
+    await _extractDraft(sourceType: 'YOUTUBE', sourceUrl: sourceUrl);
+  }
+
+  Future<void> _pickOwnVideoAndExtractDraft() async {
+    try {
+      final video = await _picker.pickVideo(source: ImageSource.gallery);
+      if (video == null || !mounted) return;
+
+      setState(() {
+        _isExtractingDraft = true;
+        _localSourceVideoPath = video.path;
+      });
+
+      final videoUrl = await MealService.instance.uploadRecipeVideo(video.path);
+      if (!mounted) return;
+
+      _videoUrlController.text = videoUrl;
+      await _extractDraft(sourceType: 'OWN_VIDEO', sourceUrl: videoUrl);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to upload and read video. $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExtractingDraft = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _extractDraft({
+    required String sourceType,
+    required String sourceUrl,
+  }) async {
+    setState(() {
+      _isExtractingDraft = true;
+    });
+
+    try {
+      final draft = await MealService.instance.createDraft(
+        sourceType: sourceType,
+        sourceUrl: sourceUrl,
+        titleHint: _titleController.text.trim(),
+      );
+
+      if (!mounted) return;
+      _applyDraft(draft);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            draft['extractionMessage']?.toString() ??
+                'Draft created. Please verify before publishing.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Unable to create draft: $error')));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isExtractingDraft = false;
+        });
+      }
+    }
+  }
+
+  void _applyDraft(Map<String, dynamic> draft) {
+    String listText(String key) {
+      final value = draft[key];
+      if (value is List) {
+        return value.map((item) => item.toString()).join('\n');
+      }
+      return value?.toString() ?? '';
+    }
+
+    setState(() {
+      _titleController.text = draft['title']?.toString() ?? '';
+      _descriptionController.text = draft['description']?.toString() ?? '';
+      _imageUrlController.text = draft['imageUrl']?.toString() ?? '';
+      _videoUrlController.text =
+          draft['videoUrl']?.toString() ?? _videoUrlController.text;
+      _trailerUrl = draft['trailerUrl']?.toString() ?? _trailerUrl;
+      _trailerType = draft['trailerType']?.toString() ?? _trailerType;
+      _promoTrailerTitle =
+          draft['promoTrailerTitle']?.toString() ?? _promoTrailerTitle;
+      _promoTrailerSubtitle =
+          draft['promoTrailerSubtitle']?.toString() ?? _promoTrailerSubtitle;
+      _promoTitleController.text = _promoTrailerTitle;
+      _promoSubtitleController.text = _promoTrailerSubtitle;
+      _durationController.text = (draft['duration'] ?? 30).toString();
+      _complexity = draft['complexity']?.toString() ?? Complexity.simple.name;
+      _categoriesController.text = listText(
+        'categories',
+      ).replaceAll('\n', ', ');
+      _ingredientsController.text = listText('ingredients');
+      _stepsController.text = listText('steps');
+      _localTrailerPath = null;
+    });
+  }
+
+  Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          '"$_title" draft saved as $_mediaType. Media links: '
-          '${_imageUrl.isEmpty && _videoUrl.isEmpty ? "pending" : "attached"}. '
-          '${_description.isEmpty ? "Description pending." : "Description added."}',
+    final hasVideoTrailer =
+        _localTrailerPath != null || _trailerUrl.trim().isNotEmpty;
+    if (_uploadMode == _UploadMode.youtube &&
+        _trailerType != 'PROMO_TEXT' &&
+        !hasVideoTrailer) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Add a trailer or use a text promo for YouTube recipes.',
+          ),
         ),
-      ),
-    );
+      );
+      return;
+    }
+
+    if (_uploadMode == _UploadMode.ownVideo && _videoUrl.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Upload your cooking video first.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isPublishing = true;
+    });
+
+    try {
+      late final Meal meal;
+      final resolvedTrailerUrl = _localTrailerPath == null
+          ? _trailerUrl
+          : await MealService.instance.uploadRecipeTrailer(_localTrailerPath!);
+      final resolvedTrailerType = resolvedTrailerUrl.trim().isNotEmpty
+          ? 'VIDEO'
+          : _trailerType;
+      final promoTitle = resolvedTrailerType == 'PROMO_TEXT'
+          ? (_promoTitleController.text.trim().isEmpty
+                ? _title
+                : _promoTitleController.text.trim())
+          : '';
+      final promoSubtitle = resolvedTrailerType == 'PROMO_TEXT'
+          ? (_promoSubtitleController.text.trim().isEmpty
+                ? 'Tap to cook the full recipe'
+                : _promoSubtitleController.text.trim())
+          : '';
+
+      if (_isEditing) {
+        meal = await MealService.instance.updateYouTubeMeal(
+          id: widget.meal!.id,
+          title: _title,
+          description: _description,
+          imageUrl: _imageUrl,
+          videoUrl: _videoUrl,
+          trailerUrl: resolvedTrailerUrl,
+          trailerType: resolvedTrailerType,
+          promoTrailerTitle: promoTitle,
+          promoTrailerSubtitle: promoSubtitle,
+          duration: int.parse(_durationController.text.trim()),
+          complexity: _complexity,
+          affordability: widget.meal!.affordability.name,
+          categories: _splitList(_categoriesController.text),
+          ingredients: _splitList(_ingredientsController.text),
+          steps: _splitList(_stepsController.text),
+          glutenFree: _glutenFree,
+          lactoseFree: _lactoseFree,
+          vegan: _vegan,
+          vegetarian: _vegetarian,
+        );
+      } else {
+        meal = await MealService.instance.createYouTubeMeal(
+          title: _title,
+          description: _description,
+          imageUrl: _imageUrl,
+          videoUrl: _videoUrl,
+          trailerUrl: resolvedTrailerUrl,
+          trailerType: resolvedTrailerType,
+          promoTrailerTitle: promoTitle,
+          promoTrailerSubtitle: promoSubtitle,
+          duration: int.parse(_durationController.text.trim()),
+          complexity: _complexity,
+          affordability: Affordability.affordable.name,
+          categories: _splitList(_categoriesController.text),
+          ingredients: _splitList(_ingredientsController.text),
+          steps: _splitList(_stepsController.text),
+          glutenFree: _glutenFree,
+          lactoseFree: _lactoseFree,
+          vegan: _vegan,
+          vegetarian: _vegetarian,
+        );
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_successMessage(meal))));
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to publish recipe: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isPublishing = false;
+        });
+      }
+    }
+  }
+
+  String _successMessage(Meal meal) {
+    if (meal.moderationStatus == 'APPROVED') {
+      return _isEditing
+          ? '"$_title" has been updated and is live'
+          : '"$_title" is published to the cooking feed';
+    }
+
+    if (meal.moderationStatus == 'REJECTED') {
+      return '"$_title" was not published because it did not pass the safety check';
+    }
+
+    return '"$_title" was saved and is pending review';
   }
 
   @override
   Widget build(BuildContext context) {
+    final youtubeVideoId = extractYouTubeVideoId(_videoUrlController.text);
+    final previewUrl = _imageUrlController.text.trim().isNotEmpty
+        ? _imageUrlController.text.trim()
+        : youtubeVideoId == null
+        ? ''
+        : youtubeThumbnailUrl(youtubeVideoId);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Creator Upload')),
+      appBar: AppBar(title: Text(_isEditing ? 'Edit Recipe' : 'Add Recipe')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(18),
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  const Icon(Icons.video_call, size: 56),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Upload a recipe or cooking video',
-                    style: Theme.of(context).textTheme.titleLarge,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: previewUrl.isEmpty
+                      ? Container(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.smart_display,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : Image.network(
+                          previewUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: Colors.black,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.smart_display,
+                                  color: Colors.white70,
+                                  size: 64,
+                                ),
+                              ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Upload recipe',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Choose YouTube for existing creator videos or upload your own cooking video.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              SegmentedButton<_UploadMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: _UploadMode.youtube,
+                    icon: Icon(Icons.smart_display),
+                    label: Text('YouTube'),
                   ),
-                  const SizedBox(height: 18),
-                  DropdownButtonFormField<String>(
-                    initialValue: _mediaType,
-                    decoration: const InputDecoration(labelText: 'Media type'),
-                    items: const [
-                      DropdownMenuItem(value: 'VIDEO', child: Text('Video')),
-                      DropdownMenuItem(value: 'IMAGE', child: Text('Image')),
-                    ],
-                    onChanged: (value) {
-                      if (value == null) return;
+                  ButtonSegment(
+                    value: _UploadMode.ownVideo,
+                    icon: Icon(Icons.upload_file),
+                    label: Text('Own video'),
+                  ),
+                ],
+                selected: {_uploadMode},
+                onSelectionChanged: _isEditing
+                    ? null
+                    : (selection) {
+                        setState(() {
+                          _uploadMode = selection.first;
+                          _trailerType = _uploadMode == _UploadMode.youtube
+                              ? 'PROMO_TEXT'
+                              : 'VIDEO';
+                        });
+                      },
+              ),
+              const SizedBox(height: 12),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 180),
+                child: _uploadMode == _UploadMode.youtube
+                    ? _YouTubeUploadPanel(
+                        key: const ValueKey('youtube-upload'),
+                        controller: _videoUrlController,
+                        extracting: _isExtractingDraft,
+                        trailerType: _trailerType,
+                        promoTitleController: _promoTitleController,
+                        promoSubtitleController: _promoSubtitleController,
+                        onExtractDraft: _extractYouTubeDraft,
+                        onUsePromoTrailer: _usePromoTrailer,
+                        onPromoTitleChanged: (value) {
+                          _promoTrailerTitle = value;
+                        },
+                        onPromoSubtitleChanged: (value) {
+                          _promoTrailerSubtitle = value;
+                        },
+                      )
+                    : _OwnVideoUploadPanel(
+                        key: const ValueKey('own-video-upload'),
+                        videoUrl: _videoUrlController.text.trim(),
+                        hasLocalVideo: _localSourceVideoPath != null,
+                        extracting: _isExtractingDraft,
+                        onPickVideo: _pickOwnVideoAndExtractDraft,
+                      ),
+              ),
+              const SizedBox(height: 12),
+              _TrailerPickerCard(
+                hasLocalTrailer: _localTrailerPath != null,
+                trailerUrl: _trailerUrl,
+                requiredTrailer: _uploadMode == _UploadMode.ownVideo,
+                onPickTrailer: _pickTrailer,
+                onRemoveTrailer: _removeTrailer,
+              ),
+              const SizedBox(height: 18),
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(labelText: 'Title'),
+                validator: (value) => value == null || value.trim().length < 3
+                    ? 'Enter title'
+                    : null,
+                onSaved: (value) => _title = value!.trim(),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(labelText: 'Description'),
+                maxLines: 3,
+                onSaved: (value) => _description = value?.trim() ?? '',
+              ),
+              FormField<String>(
+                validator: (_) {
+                  final videoUrl = _videoUrlController.text.trim();
+                  if (videoUrl.isEmpty) return 'Add a cooking video first';
+                  if (_uploadMode == _UploadMode.youtube &&
+                      !isYouTubeUrl(videoUrl)) {
+                    return 'Use a valid YouTube watch, shorts, or youtu.be link';
+                  }
+                  return null;
+                },
+                onSaved: (_) => _videoUrl = _videoUrlController.text.trim(),
+                builder: (field) {
+                  if (!field.hasError) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      field.errorText!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _durationController,
+                decoration: const InputDecoration(
+                  labelText: 'Cooking time',
+                  suffixText: 'min',
+                  prefixIcon: Icon(Icons.timer_outlined),
+                ),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  final duration = int.tryParse(value?.trim() ?? '');
+                  if (duration == null || duration <= 0) {
+                    return 'Enter cooking time in minutes';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                initialValue: _complexity,
+                decoration: const InputDecoration(
+                  labelText: 'Difficulty',
+                  prefixIcon: Icon(Icons.local_fire_department_outlined),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'simple', child: Text('Simple')),
+                  DropdownMenuItem(value: 'challenging', child: Text('Medium')),
+                  DropdownMenuItem(value: 'hard', child: Text('Difficult')),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    _complexity = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilterChip(
+                    selected: _glutenFree,
+                    label: const Text('Gluten-free'),
+                    onSelected: (value) {
                       setState(() {
-                        _mediaType = value;
+                        _glutenFree = value;
                       });
                     },
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Title'),
-                    validator: (value) =>
-                        value == null || value.trim().length < 3
-                        ? 'Enter title'
-                        : null,
-                    onSaved: (value) => _title = value!.trim(),
+                  FilterChip(
+                    selected: _lactoseFree,
+                    label: const Text('Lactose-free'),
+                    onSelected: (value) {
+                      setState(() {
+                        _lactoseFree = value;
+                      });
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Description'),
-                    maxLines: 3,
-                    onSaved: (value) => _description = value?.trim() ?? '',
+                  FilterChip(
+                    selected: _vegetarian,
+                    label: const Text('Vegetarian'),
+                    onSelected: (value) {
+                      setState(() {
+                        _vegetarian = value;
+                      });
+                    },
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Image URL'),
-                    onSaved: (value) => _imageUrl = value?.trim() ?? '',
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Video URL'),
-                    onSaved: (value) => _videoUrl = value?.trim() ?? '',
-                  ),
-                  const SizedBox(height: 18),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton.icon(
-                      onPressed: _submit,
-                      icon: const Icon(Icons.upload),
-                      label: const Text('Save Draft'),
-                    ),
+                  FilterChip(
+                    selected: _vegan,
+                    label: const Text('Vegan'),
+                    onSelected: (value) {
+                      setState(() {
+                        _vegan = value;
+                      });
+                    },
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _categoriesController,
+                decoration: const InputDecoration(
+                  labelText: 'Categories',
+                  prefixIcon: Icon(Icons.category_outlined),
+                ),
+                validator: (value) => _splitList(value ?? '').isEmpty
+                    ? 'Enter at least one category'
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _ingredientsController,
+                decoration: const InputDecoration(
+                  labelText: 'Ingredients',
+                  prefixIcon: Icon(Icons.format_list_bulleted),
+                ),
+                minLines: 3,
+                maxLines: 6,
+                validator: (value) => _splitList(value ?? '').isEmpty
+                    ? 'Enter at least one ingredient'
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _stepsController,
+                decoration: const InputDecoration(
+                  labelText: 'Cooking steps',
+                  prefixIcon: Icon(Icons.checklist_outlined),
+                ),
+                minLines: 3,
+                maxLines: 6,
+                validator: (value) => _splitList(value ?? '').isEmpty
+                    ? 'Enter at least one cooking step'
+                    : null,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _imageUrlController,
+                decoration: const InputDecoration(
+                  labelText: 'Cover image URL',
+                  prefixIcon: Icon(Icons.image_outlined),
+                ),
+                keyboardType: TextInputType.url,
+                textInputAction: TextInputAction.done,
+                onSaved: (value) => _imageUrl = value?.trim() ?? '',
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: _isPublishing ? null : _submit,
+                  icon: _isPublishing
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.publish),
+                  label: Text(
+                    _isPublishing
+                        ? _isEditing
+                              ? 'Saving...'
+                              : 'Publishing...'
+                        : _isEditing
+                        ? 'Save Changes'
+                        : 'Publish',
+                  ),
+                ),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _YouTubeUploadPanel extends StatelessWidget {
+  const _YouTubeUploadPanel({
+    super.key,
+    required this.controller,
+    required this.extracting,
+    required this.trailerType,
+    required this.promoTitleController,
+    required this.promoSubtitleController,
+    required this.onExtractDraft,
+    required this.onUsePromoTrailer,
+    required this.onPromoTitleChanged,
+    required this.onPromoSubtitleChanged,
+  });
+
+  final TextEditingController controller;
+  final bool extracting;
+  final String trailerType;
+  final TextEditingController promoTitleController;
+  final TextEditingController promoSubtitleController;
+  final VoidCallback onExtractDraft;
+  final VoidCallback onUsePromoTrailer;
+  final ValueChanged<String> onPromoTitleChanged;
+  final ValueChanged<String> onPromoSubtitleChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'YouTube video link',
+                prefixIcon: Icon(Icons.smart_display),
+              ),
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: extracting ? null : onExtractDraft,
+              icon: extracting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.auto_awesome),
+              label: Text(extracting ? 'Extracting...' : 'AI Extract Details'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onUsePromoTrailer,
+              icon: const Icon(Icons.text_fields),
+              label: const Text('Use Text Promo Trailer'),
+            ),
+            if (trailerType == 'PROMO_TEXT') ...[
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: promoTitleController,
+                decoration: const InputDecoration(
+                  labelText: 'Promo trailer title',
+                  prefixIcon: Icon(Icons.title),
+                ),
+                onChanged: onPromoTitleChanged,
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: promoSubtitleController,
+                decoration: const InputDecoration(
+                  labelText: 'Promo trailer subtitle',
+                  prefixIcon: Icon(Icons.subtitles_outlined),
+                ),
+                onChanged: onPromoSubtitleChanged,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnVideoUploadPanel extends StatelessWidget {
+  const _OwnVideoUploadPanel({
+    super.key,
+    required this.videoUrl,
+    required this.hasLocalVideo,
+    required this.extracting,
+    required this.onPickVideo,
+  });
+
+  final String videoUrl;
+  final bool hasLocalVideo;
+  final bool extracting;
+  final VoidCallback onPickVideo;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final hasVideo = videoUrl.isNotEmpty || hasLocalVideo;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.video_file_outlined, color: colorScheme.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    hasVideo
+                        ? 'Cooking video uploaded'
+                        : 'Upload your cooking video',
+                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              hasVideo
+                  ? 'Review the extracted recipe details below before publishing.'
+                  : 'ABCDish will upload the video, create a draft, then ask you to verify it.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            if (videoUrl.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                videoUrl,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: extracting ? null : onPickVideo,
+              icon: extracting
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_file),
+              label: Text(
+                extracting
+                    ? 'Uploading...'
+                    : hasVideo
+                    ? 'Replace Video'
+                    : 'Upload Video & Extract',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrailerPickerCard extends StatelessWidget {
+  const _TrailerPickerCard({
+    required this.hasLocalTrailer,
+    required this.trailerUrl,
+    required this.requiredTrailer,
+    required this.onPickTrailer,
+    required this.onRemoveTrailer,
+  });
+
+  final bool hasLocalTrailer;
+  final String trailerUrl;
+  final bool requiredTrailer;
+  final VoidCallback onPickTrailer;
+  final VoidCallback onRemoveTrailer;
+
+  bool get _hasTrailer => hasLocalTrailer || trailerUrl.trim().isNotEmpty;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.movie_creation_outlined, color: colorScheme.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '30 sec feed trailer',
+                    style: Theme.of(context).textTheme.titleSmall!.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (_hasTrailer)
+                  IconButton(
+                    onPressed: onRemoveTrailer,
+                    icon: const Icon(Icons.close),
+                    tooltip: 'Remove trailer',
+                  ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _hasTrailer
+                  ? hasLocalTrailer
+                        ? 'New trailer selected. It will upload when you publish.'
+                        : 'Trailer attached for feed autoplay.'
+                  : requiredTrailer
+                  ? 'Required for own videos until automatic trailer extraction is enabled.'
+                  : 'Optional. You can use a text promo trailer for YouTube recipes.',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onPickTrailer,
+                icon: const Icon(Icons.video_library_outlined),
+                label: Text(_hasTrailer ? 'Change Trailer' : 'Choose Trailer'),
+              ),
+            ),
+          ],
         ),
       ),
     );

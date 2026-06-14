@@ -28,6 +28,18 @@ class HomeScreen extends ConsumerWidget {
       error: (error, stackTrace) =>
           Center(child: Text('Failed to load categories: $error')),
       data: (categories) {
+        if (availableMeals.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'No recipes match these filters.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
         final featuredMeal = availableMeals.first;
 
         return ListView(

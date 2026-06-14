@@ -9,7 +9,10 @@ class AppSessionService {
   final ApiClient _apiClient = ApiClient.instance;
 
   Future<AppSession> fetchSession() async {
-    final response = await _apiClient.get('/api/app/session');
+    final response = await _apiClient.get(
+      '/api/app/session',
+      timeout: const Duration(seconds: 6),
+    );
 
     return AppSession.fromJson(response as Map<String, dynamic>);
   }

@@ -1,6 +1,7 @@
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 import 'package:abcdish/models/feed_comment.dart';
@@ -10,8 +11,10 @@ import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/feed_provider.dart';
 import 'package:abcdish/screens/create_story.dart';
 import 'package:abcdish/screens/meal_details.dart';
+import 'package:abcdish/services/safety_service.dart';
 import 'package:abcdish/services/social_service.dart';
 import 'package:abcdish/services/story_service.dart';
+import 'package:abcdish/utils/youtube_video.dart';
 
 class FoodFeedScreen extends ConsumerStatefulWidget {
   const FoodFeedScreen({super.key});
@@ -21,13 +24,17 @@ class FoodFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
+  static const _hiddenCreatorsKey = 'hidden_creator_keys';
+
   final List<Story> _stories = [];
+  final Set<String> _hiddenCreatorKeys = {};
   late Future<void> _loadStoriesFuture;
 
   @override
   void initState() {
     super.initState();
     _loadStoriesFuture = _loadStories();
+    _loadHiddenCreators();
   }
 
   Future<void> _loadStories() async {
@@ -39,6 +46,17 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
       _stories
         ..clear()
         ..addAll(stories);
+    });
+  }
+
+  Future<void> _loadHiddenCreators() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    setState(() {
+      _hiddenCreatorKeys
+        ..clear()
+        ..addAll(prefs.getStringList(_hiddenCreatorsKey) ?? const []);
     });
   }
 
@@ -55,13 +73,21 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
 
     if (story == null || !mounted) return;
 
-    setState(() {
-      _stories.insert(0, story);
-    });
+    if (story.moderationStatus == 'APPROVED') {
+      setState(() {
+        _stories.insert(0, story);
+      });
+    }
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Story posted')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          story.moderationStatus == 'APPROVED'
+              ? 'Story posted'
+              : 'Story saved and pending review',
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleLike(Meal meal) async {
@@ -104,6 +130,110 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
     } catch (error) {
       _showSocialError(error);
     }
+  }
+
+  Future<void> _hideCreator(Meal meal) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    setState(() {
+      _hiddenCreatorKeys.add(meal.creatorKey);
+    });
+
+    await prefs.setStringList(_hiddenCreatorsKey, _hiddenCreatorKeys.toList());
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Hidden posts from ${_creatorName(meal)}')),
+    );
+  }
+
+  Future<void> _reportMeal(Meal meal, String reason) async {
+    try {
+      await SafetyService.instance.reportContent(
+        targetType: 'meal',
+        targetId: meal.id,
+        reason: reason,
+        details: meal.title,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Thanks. We will review this post.')),
+      );
+    } catch (error) {
+      _showSocialError(error);
+    }
+  }
+
+  void _showPostOptions(Meal meal) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('Report post'),
+              subtitle: const Text('Spam, unsafe, abusive, or inappropriate'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _showReportReasons(meal);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.visibility_off_outlined),
+              title: Text('Hide ${_creatorName(meal)}'),
+              subtitle: const Text('Remove this creator from your feed'),
+              onTap: () {
+                Navigator.of(context).pop();
+                _hideCreator(meal);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showReportReasons(Meal meal) {
+    const reasons = [
+      'Spam or misleading',
+      'Unsafe cooking advice',
+      'Harassment or hate',
+      'Adult or inappropriate content',
+      'Copyright or stolen content',
+    ];
+
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                'Why are you reporting this?',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+            for (final reason in reasons)
+              ListTile(
+                title: Text(reason),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _reportMeal(meal, reason);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showStory(Meal meal) {
@@ -293,10 +423,16 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
         onRetry: () => ref.invalidate(feedProvider),
       ),
       data: (meals) {
-        if (meals.isEmpty) {
+        final visibleMeals = meals
+            .where((meal) => !_hiddenCreatorKeys.contains(meal.creatorKey))
+            .toList();
+
+        if (visibleMeals.isEmpty) {
           return _FeedMessage(
             title: 'Food feed is warming up',
-            message: 'Recipes and creator videos will appear here.',
+            message: meals.isEmpty
+                ? 'Recipes and creator videos will appear here.'
+                : 'You have hidden all available creator posts.',
             onRetry: () => ref.invalidate(feedProvider),
           );
         }
@@ -329,11 +465,11 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
                 ),
               ),
               SliverList.separated(
-                itemCount: meals.length,
+                itemCount: visibleMeals.length,
                 separatorBuilder: (context, index) =>
                     const SizedBox(height: 10),
                 itemBuilder: (context, index) {
-                  final meal = meals[index];
+                  final meal = visibleMeals[index];
 
                   return _SocialMealPost(
                     meal: meal,
@@ -348,6 +484,7 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
                     onComment: () => _openComments(meal),
                     onShare: () => _shareMeal(meal),
                     onFollow: () => _toggleFollow(meal),
+                    onMoreOptions: () => _showPostOptions(meal),
                   );
                 },
               ),
@@ -631,6 +768,7 @@ class _SocialMealPost extends ConsumerWidget {
     required this.onComment,
     required this.onShare,
     required this.onFollow,
+    required this.onMoreOptions,
   });
 
   final Meal meal;
@@ -645,6 +783,7 @@ class _SocialMealPost extends ConsumerWidget {
   final VoidCallback onComment;
   final VoidCallback onShare;
   final VoidCallback onFollow;
+  final VoidCallback onMoreOptions;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -654,6 +793,15 @@ class _SocialMealPost extends ConsumerWidget {
     final caption = meal.description.trim().isEmpty
         ? 'Fresh cooking inspiration from ABCDish.'
         : meal.description.trim();
+    final trailerUrl = meal.trailerUrl.trim();
+    final videoUrl = meal.videoUrl.trim();
+    final sourceLabel = trailerUrl.isNotEmpty
+        ? '30 sec trailer'
+        : videoUrl.isEmpty
+        ? null
+        : extractYouTubeVideoId(videoUrl) != null
+        ? 'YouTube recipe'
+        : 'Linked video';
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 12),
@@ -697,11 +845,7 @@ class _SocialMealPost extends ConsumerWidget {
                   label: Text(isFollowing ? 'Following' : 'Follow'),
                 ),
                 IconButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Post options coming soon')),
-                    );
-                  },
+                  onPressed: onMoreOptions,
                   icon: const Icon(Icons.more_horiz),
                   tooltip: 'Post options',
                 ),
@@ -748,6 +892,18 @@ class _SocialMealPost extends ConsumerWidget {
                       icon: Icons.restaurant_menu,
                       label: meal.complexity.name,
                     ),
+                  ),
+                  if (sourceLabel != null)
+                    Positioned(
+                      left: 12,
+                      top: 54,
+                      child: _VideoSourcePill(label: sourceLabel),
+                    ),
+                  Positioned(
+                    left: 14,
+                    right: 14,
+                    bottom: 76,
+                    child: _OpenRecipeCta(onTap: onOpenMeal),
                   ),
                   Positioned(
                     left: 0,
@@ -1242,15 +1398,327 @@ class _MealPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final videoUrl = meal.videoUrl.trim();
+    final trailerUrl = meal.trailerUrl.trim();
+    final videoUrl = trailerUrl.isNotEmpty ? trailerUrl : meal.videoUrl.trim();
 
     if (videoUrl.isEmpty) {
+      if (meal.trailerType == 'PROMO_TEXT') {
+        return _PromoTextTrailer(meal: meal);
+      }
       return _MealImage(meal: meal, fit: BoxFit.cover);
+    }
+
+    if (trailerUrl.isNotEmpty) {
+      return _AutoPlayVideoPreview(
+        videoUrl: trailerUrl,
+        fallback: _MealImage(meal: meal, fit: BoxFit.cover),
+      );
+    }
+
+    final youtubeVideoId = extractYouTubeVideoId(videoUrl);
+    if (youtubeVideoId != null) {
+      if (meal.trailerType == 'PROMO_TEXT') {
+        return _PromoTextTrailer(meal: meal);
+      }
+      return _YouTubeMealPreview(meal: meal, videoId: youtubeVideoId);
     }
 
     return _AutoPlayVideoPreview(
       videoUrl: videoUrl,
       fallback: _MealImage(meal: meal, fit: BoxFit.cover),
+    );
+  }
+}
+
+class _PromoTextTrailer extends StatelessWidget {
+  const _PromoTextTrailer({required this.meal});
+
+  final Meal meal;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = meal.promoTrailerTitle.trim().isNotEmpty
+        ? meal.promoTrailerTitle.trim()
+        : meal.title;
+    final subtitle = meal.promoTrailerSubtitle.trim().isNotEmpty
+        ? meal.promoTrailerSubtitle.trim()
+        : 'Watch the recipe and cook along on ABCDish.';
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE94335), Color(0xFF2E7D32)],
+        ),
+      ),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.16),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(26),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 7,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.22),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.person_outline,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          meal.creatorName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium!
+                              .copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Icon(
+                        Icons.music_note,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Icon(
+                  Icons.restaurant_menu,
+                  color: Colors.white,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  subtitle,
+                  textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                    color: Colors.white.withValues(alpha: 0.92),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _YouTubeMealPreview extends StatelessWidget {
+  const _YouTubeMealPreview({required this.meal, required this.videoId});
+
+  final Meal meal;
+  final String videoId;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumbnailUrl = meal.imageUrl.trim().isNotEmpty
+        ? meal.imageUrl.trim()
+        : youtubeThumbnailUrl(videoId);
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.network(
+          thumbnailUrl,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => _ImageFallback(),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.08),
+                Colors.black.withValues(alpha: 0.38),
+              ],
+            ),
+          ),
+        ),
+        Center(
+          child: Container(
+            width: 58,
+            height: 58,
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.92),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.24),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(Icons.play_arrow, color: Colors.white, size: 34),
+          ),
+        ),
+        Positioned(
+          right: 12,
+          top: 12,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.56),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.smart_display, color: Colors.white, size: 15),
+                  SizedBox(width: 5),
+                  Text(
+                    'YouTube',
+                    style: TextStyle(color: Colors.white, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OpenRecipeCta extends StatefulWidget {
+  const _OpenRecipeCta({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_OpenRecipeCta> createState() => _OpenRecipeCtaState();
+}
+
+class _OpenRecipeCtaState extends State<_OpenRecipeCta>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _scale = Tween<double>(
+      begin: 0.98,
+      end: 1.04,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    _opacity = Tween<double>(
+      begin: 0.84,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: FadeTransition(
+        opacity: _opacity,
+        child: ScaleTransition(
+          scale: _scale,
+          child: FilledButton.icon(
+            onPressed: widget.onTap,
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              elevation: 4,
+            ),
+            icon: const Icon(Icons.restaurant_menu),
+            label: const Text('Want to cook?'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoSourcePill extends StatelessWidget {
+  const _VideoSourcePill({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.link, color: Colors.white, size: 15),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

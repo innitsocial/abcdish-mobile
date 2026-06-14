@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// import 'package:meals/screens/tabs.dart';
-// import 'package:meals/widgets/main_drawer.dart';
 import 'package:abcdish/providers/filters_provider.dart';
 
 class FiltersScreen extends ConsumerWidget {
@@ -13,16 +11,14 @@ class FiltersScreen extends ConsumerWidget {
     final activeFilters = ref.watch(filtersProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Your Filters')),
+      appBar: AppBar(title: const Text('Filters')),
       body: Column(
         children: [
           SwitchListTile(
-            value: activeFilters[Filter.glutenFree]!,
-            onChanged: (isChecked) {
-              ref
-                  .read(filtersProvider.notifier)
-                  .setFilter(Filter.glutenFree, isChecked);
-            },
+            value: activeFilters.glutenFree,
+            onChanged: (_) => ref
+                .read(filtersProvider.notifier)
+                .toggleDietary(DietaryFilter.glutenFree),
             title: Text(
               'Gluten-free',
               style: Theme.of(context).textTheme.titleLarge!.copyWith(
@@ -39,12 +35,10 @@ class FiltersScreen extends ConsumerWidget {
             contentPadding: const EdgeInsets.only(left: 34, right: 22),
           ),
           SwitchListTile(
-            value: activeFilters[Filter.lactoseFree]!,
-            onChanged: (isChecked) {
-              ref
-                  .read(filtersProvider.notifier)
-                  .setFilter(Filter.lactoseFree, isChecked);
-            },
+            value: activeFilters.lactoseFree,
+            onChanged: (_) => ref
+                .read(filtersProvider.notifier)
+                .toggleDietary(DietaryFilter.lactoseFree),
             title: Text(
               'Lactose-free',
               style: Theme.of(context).textTheme.titleLarge!.copyWith(
@@ -61,12 +55,10 @@ class FiltersScreen extends ConsumerWidget {
             contentPadding: const EdgeInsets.only(left: 34, right: 22),
           ),
           SwitchListTile(
-            value: activeFilters[Filter.vegetarian]!,
-            onChanged: (isChecked) {
-              ref
-                  .read(filtersProvider.notifier)
-                  .setFilter(Filter.vegetarian, isChecked);
-            },
+            value: activeFilters.vegetarian,
+            onChanged: (_) => ref
+                .read(filtersProvider.notifier)
+                .toggleDietary(DietaryFilter.vegetarian),
             title: Text(
               'Vegetarian',
               style: Theme.of(context).textTheme.titleLarge!.copyWith(
@@ -83,12 +75,10 @@ class FiltersScreen extends ConsumerWidget {
             contentPadding: const EdgeInsets.only(left: 34, right: 22),
           ),
           SwitchListTile(
-            value: activeFilters[Filter.vegan]!,
-            onChanged: (isChecked) {
-              ref
-                  .read(filtersProvider.notifier)
-                  .setFilter(Filter.vegan, isChecked);
-            },
+            value: activeFilters.vegan,
+            onChanged: (_) => ref
+                .read(filtersProvider.notifier)
+                .toggleDietary(DietaryFilter.vegan),
             title: Text(
               'Vegan',
               style: Theme.of(context).textTheme.titleLarge!.copyWith(

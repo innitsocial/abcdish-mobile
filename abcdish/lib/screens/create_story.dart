@@ -120,7 +120,7 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         maxDuration: const Duration(seconds: 60),
       );
 
-      if (video == null || !mounted) return;
+      if (video == null || !mounted) return;      
 
       setState(() {
         _loadingPreview = true;

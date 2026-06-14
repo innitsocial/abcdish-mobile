@@ -138,11 +138,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout() async {
     await _authService.logout();
+    markLoggedOut();
+  }
+
+  void markLoggedOut() {
     state = state.copyWith(
       isLoggedIn: false,
       isLoading: false,
       errorMessage: null,
     );
+  }
+
+  Future<bool> deleteAccount() async {
+    state = state.copyWith(isLoading: true, errorMessage: null);
+
+    try {
+      await _authService.deleteAccount();
+      state = state.copyWith(
+        isLoggedIn: false,
+        isLoading: false,
+        errorMessage: null,
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(isLoading: false, errorMessage: error.toString());
+      return false;
+    }
   }
 }
 

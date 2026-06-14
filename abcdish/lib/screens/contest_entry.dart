@@ -27,16 +27,22 @@ class _ContestEntryScreenState extends State<ContestEntryScreen> {
     });
 
     try {
-      await ContestService.instance.submitEntry(
+      final moderationStatus = await ContestService.instance.submitEntry(
         contestId: widget.contest.id,
         title: _title,
         videoUrl: _videoUrl,
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Contest entry submitted')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            moderationStatus == 'APPROVED'
+                ? 'Contest entry is live'
+                : 'Contest entry submitted and pending review',
+          ),
+        ),
+      );
       Navigator.of(context).pop();
     } catch (error) {
       if (!mounted) return;

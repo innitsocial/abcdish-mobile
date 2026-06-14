@@ -7,6 +7,8 @@ import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/favorites_provider.dart';
 import 'package:abcdish/providers/shopping_list_provider.dart';
 import 'package:abcdish/services/video_access_service.dart';
+import 'package:abcdish/utils/youtube_video.dart';
+import 'package:abcdish/widgets/youtube_recipe_player.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
   const MealDetailsScreen({super.key, required this.meal});
@@ -62,6 +64,16 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         _videoAccessMessage = 'Video is not available for this recipe yet.';
       });
       return false;
+    }
+
+    final youtubeVideoId = extractYouTubeVideoId(url);
+    if (youtubeVideoId != null) {
+      setState(() {
+        _isVideoReady = true;
+        _isInitialisingVideo = false;
+        _videoAccessMessage = null;
+      });
+      return true;
     }
 
     setState(() {
@@ -172,6 +184,11 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
   Widget _buildVideoPlayer() {
     final controller = _videoController;
     final chewieController = _chewieController;
+    final youtubeVideoId = extractYouTubeVideoId(widget.meal.videoUrl);
+
+    if (_isVideoReady && _videoAccessAllowed && youtubeVideoId != null) {
+      return YoutubeRecipePlayer(videoId: youtubeVideoId);
+    }
 
     if (_isVideoReady && controller != null && chewieController != null) {
       return AspectRatio(
@@ -188,6 +205,12 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
           if (widget.meal.imageUrl.trim().isNotEmpty)
             Image.network(
               widget.meal.imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => _videoFallback(),
+            )
+          else if (youtubeVideoId != null)
+            Image.network(
+              youtubeThumbnailUrl(youtubeVideoId),
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) => _videoFallback(),
             )

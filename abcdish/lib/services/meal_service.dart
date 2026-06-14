@@ -17,4 +17,158 @@ class MealService {
       return Meal.fromJson(item as Map<String, dynamic>);
     }).toList();
   }
+
+  Future<List<Meal>> fetchManagedMeals() async {
+    final response = await _apiClient.get('/api/meals/manage');
+
+    final List<dynamic> data = response as List<dynamic>;
+
+    return data.map((item) {
+      return Meal.fromJson(item as Map<String, dynamic>);
+    }).toList();
+  }
+
+  Future<Meal> createYouTubeMeal({
+    required String title,
+    required String description,
+    required String imageUrl,
+    required String videoUrl,
+    required String trailerUrl,
+    required String trailerType,
+    required String promoTrailerTitle,
+    required String promoTrailerSubtitle,
+    required int duration,
+    required String complexity,
+    required String affordability,
+    required List<String> categories,
+    required List<String> ingredients,
+    required List<String> steps,
+    required bool glutenFree,
+    required bool lactoseFree,
+    required bool vegan,
+    required bool vegetarian,
+  }) async {
+    final response = await _apiClient.post(
+      '/api/meals',
+      body: {
+        'title': title,
+        'description': description,
+        'imageUrl': imageUrl,
+        'videoUrl': videoUrl,
+        'trailerUrl': trailerUrl,
+        'trailerType': trailerType,
+        'promoTrailerTitle': promoTrailerTitle,
+        'promoTrailerSubtitle': promoTrailerSubtitle,
+        'duration': duration,
+        'complexity': complexity,
+        'affordability': affordability,
+        'categories': categories,
+        'ingredients': ingredients,
+        'steps': steps,
+        'glutenFree': glutenFree,
+        'lactoseFree': lactoseFree,
+        'vegan': vegan,
+        'vegetarian': vegetarian,
+      },
+    );
+
+    return Meal.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<Meal> updateYouTubeMeal({
+    required String id,
+    required String title,
+    required String description,
+    required String imageUrl,
+    required String videoUrl,
+    required String trailerUrl,
+    required String trailerType,
+    required String promoTrailerTitle,
+    required String promoTrailerSubtitle,
+    required int duration,
+    required String complexity,
+    required String affordability,
+    required List<String> categories,
+    required List<String> ingredients,
+    required List<String> steps,
+    required bool glutenFree,
+    required bool lactoseFree,
+    required bool vegan,
+    required bool vegetarian,
+  }) async {
+    final response = await _apiClient.put(
+      '/api/meals/$id',
+      body: {
+        'title': title,
+        'description': description,
+        'imageUrl': imageUrl,
+        'videoUrl': videoUrl,
+        'trailerUrl': trailerUrl,
+        'trailerType': trailerType,
+        'promoTrailerTitle': promoTrailerTitle,
+        'promoTrailerSubtitle': promoTrailerSubtitle,
+        'duration': duration,
+        'complexity': complexity,
+        'affordability': affordability,
+        'categories': categories,
+        'ingredients': ingredients,
+        'steps': steps,
+        'glutenFree': glutenFree,
+        'lactoseFree': lactoseFree,
+        'vegan': vegan,
+        'vegetarian': vegetarian,
+      },
+    );
+
+    return Meal.fromJson(response as Map<String, dynamic>);
+  }
+
+  Future<void> deleteMeal(String id) async {
+    await _apiClient.delete('/api/meals/$id');
+  }
+
+  Future<String> uploadRecipeTrailer(String filePath) async {
+    final response = await _apiClient.uploadFile(
+      '/api/media/recipe-trailer',
+      fieldName: 'file',
+      filePath: filePath,
+    );
+
+    if (response is Map<String, dynamic>) {
+      return response['publicUrl']?.toString() ?? '';
+    }
+
+    return '';
+  }
+
+  Future<String> uploadRecipeVideo(String filePath) async {
+    final response = await _apiClient.uploadFile(
+      '/api/media/recipe-video',
+      fieldName: 'file',
+      filePath: filePath,
+    );
+
+    if (response is Map<String, dynamic>) {
+      return response['publicUrl']?.toString() ?? '';
+    }
+
+    return '';
+  }
+
+  Future<Map<String, dynamic>> createDraft({
+    required String sourceType,
+    required String sourceUrl,
+    String titleHint = '',
+  }) async {
+    final response = await _apiClient.post(
+      '/api/meals/draft',
+      body: {
+        'sourceType': sourceType,
+        'sourceUrl': sourceUrl,
+        'titleHint': titleHint,
+      },
+    );
+
+    return response as Map<String, dynamic>;
+  }
 }

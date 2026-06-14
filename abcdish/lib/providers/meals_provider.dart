@@ -6,3 +6,7 @@ import 'package:abcdish/services/meal_service.dart';
 final mealsProvider = FutureProvider<List<Meal>>((ref) async {
   return MealService.instance.fetchMeals();
 });
+
+final managedMealsProvider = FutureProvider<List<Meal>>((ref) async {
+  return MealService.instance.fetchManagedMeals();
+});

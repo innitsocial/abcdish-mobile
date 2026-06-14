@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/app_session_provider.dart';
 import 'package:abcdish/providers/auth_provider.dart';
+import 'package:abcdish/screens/creator_recipes.dart';
 import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/screens/partner_stores.dart';
@@ -39,6 +40,50 @@ class ProfileScreen extends ConsumerWidget {
     ).showSnackBar(const SnackBar(content: Text('Logged out successfully')));
   }
 
+  Future<void> _deleteAccount(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This permanently deletes your ABCDish account, stories, comments, likes, sessions, and saved app data. This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final deleted = await ref.read(authProvider.notifier).deleteAccount();
+    ref.invalidate(appSessionProvider);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          deleted
+              ? 'Your account has been deleted'
+              : ref.read(authProvider).errorMessage ??
+                    'Could not delete account',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
@@ -68,8 +113,26 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text('$error', textAlign: TextAlign.center),
+          Text(
+            'Please try again. If this keeps happening, logout and sign in again.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$error',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 24),
+          FilledButton.icon(
+            onPressed: () => ref.invalidate(appSessionProvider),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Try again'),
+          ),
+          const SizedBox(height: 10),
           FilledButton.icon(
             onPressed: () => _logout(context, ref),
             icon: const Icon(Icons.logout),
@@ -170,7 +233,13 @@ class ProfileScreen extends ConsumerWidget {
             _ProfileTile(
               icon: Icons.video_call,
               title: 'Creator Studio',
-              subtitle: 'Upload recipe drafts and cooking videos',
+              subtitle: 'Manage, edit, remove, and publish recipes',
+              onTap: () => _open(context, const CreatorRecipesScreen()),
+            ),
+            _ProfileTile(
+              icon: Icons.add_circle_outline,
+              title: 'Add Recipe',
+              subtitle: 'Publish a YouTube recipe with ingredients and steps',
               onTap: () => _open(context, const CreatorUploadScreen()),
             ),
             _ProfileTile(
@@ -199,6 +268,23 @@ class ProfileScreen extends ConsumerWidget {
             const ListTile(
               leading: Icon(Icons.settings_outlined),
               title: Text('Settings'),
+            ),
+            const SizedBox(height: 12),
+            Card(
+              child: ListTile(
+                leading: Icon(
+                  Icons.delete_forever_outlined,
+                  color: colorScheme.error,
+                ),
+                title: Text(
+                  'Delete account',
+                  style: TextStyle(color: colorScheme.error),
+                ),
+                subtitle: const Text(
+                  'Permanently remove your account and personal data',
+                ),
+                onTap: () => _deleteAccount(context, ref),
+              ),
             ),
           ],
         );
