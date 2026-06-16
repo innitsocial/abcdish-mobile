@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:abcdish/providers/partner_store_provider.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class PartnerStoresScreen extends ConsumerWidget {
   const PartnerStoresScreen({super.key});
@@ -14,12 +15,21 @@ class PartnerStoresScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Partner Stores')),
       body: storesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stackTrace) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Unable to load partner stores.\n\n$error'),
-          ),
-        ),
+        error: (error, stackTrace) {
+          logUiError('Partner stores load failed', error, stackTrace);
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                userFriendlyErrorMessage(
+                  error,
+                  fallback: 'Unable to load partner stores right now.',
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        },
         data: (stores) {
           if (stores.isEmpty) {
             return const Center(

@@ -8,6 +8,7 @@ import 'package:abcdish/models/contest_entry.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/services/api_client.dart';
 import 'package:abcdish/services/story_service.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class CreateStoryScreen extends StatefulWidget {
   const CreateStoryScreen({super.key, this.promotedEntry});
@@ -169,8 +170,16 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         _previewFailed = true;
       });
 
+      logUiError('Story video picker failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to open video picker. $error')),
+        SnackBar(
+          content: Text(
+            userFriendlyErrorMessage(
+              error,
+              fallback: 'Unable to open video picker. Please try again.',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -211,9 +220,17 @@ class _CreateStoryScreenState extends State<CreateStoryScreen> {
         ).push(MaterialPageRoute(builder: (context) => const LoginScreen()));
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to post story. $error')));
+      logUiError('Story publish failed', error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userFriendlyErrorMessage(
+              error,
+              fallback: 'Unable to post story. Please try again.',
+            ),
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {

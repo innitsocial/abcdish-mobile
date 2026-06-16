@@ -8,6 +8,7 @@ import 'package:abcdish/providers/categories_provider.dart';
 import 'package:abcdish/providers/filters_provider.dart';
 import 'package:abcdish/screens/meal_details.dart';
 import 'package:abcdish/screens/meals.dart';
+import 'package:abcdish/utils/error_messages.dart';
 import 'package:abcdish/widgets/category_grid_item.dart';
 import 'package:abcdish/widgets/meal_item.dart';
 
@@ -75,9 +76,22 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Center(
-        child: Text('${text.raw('Failed to load categories')}: $error'),
-      ),
+      error: (error, stackTrace) {
+        logUiError('Search categories failed', error, stackTrace);
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              userFriendlyErrorMessage(
+                error,
+                fallback:
+                    '${text.raw('Failed to load categories')}. ${text.raw('Please try again.')}',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      },
       data: (categories) {
         final filteredCategories = _filterCategories(categories, filters);
         final filteredMeals = _filterMeals(categories, filters);

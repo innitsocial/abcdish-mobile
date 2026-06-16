@@ -13,6 +13,7 @@ import 'package:abcdish/services/meal_service.dart';
 import 'package:abcdish/services/video_access_service.dart';
 import 'package:abcdish/utils/app_snack_bar.dart';
 import 'package:abcdish/utils/auth_navigation.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class MealDetailsScreen extends ConsumerStatefulWidget {
   const MealDetailsScreen({super.key, required this.meal});
@@ -186,7 +187,12 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              '${ref.read(appTextProvider).raw('Unable to check video access.')} $error',
+              userFriendlyErrorMessage(
+                error,
+                fallback: ref
+                    .read(appTextProvider)
+                    .raw('Unable to check video access.'),
+              ),
             ),
           ),
         );
@@ -272,9 +278,7 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
       return;
     }
 
-    ref
-        .read(shoppingListProvider.notifier)
-        .addIngredients(_meal.ingredients);
+    ref.read(shoppingListProvider.notifier).addIngredients(_meal.ingredients);
 
     ScaffoldMessenger.of(context).showSnackBar(
       successSnackBar(
@@ -302,9 +306,10 @@ class _MealDetailsScreenState extends ConsumerState<MealDetailsScreen> {
     } catch (error) {
       if (!mounted) return;
 
+      logUiError('Full recipe load failed', error);
       setState(() {
         _isLoadingRecipe = false;
-        _recipeLoadError = error.toString();
+        _recipeLoadError = userFriendlyErrorMessage(error);
       });
     }
   }

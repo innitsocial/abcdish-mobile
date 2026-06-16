@@ -7,6 +7,7 @@ import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/services/api_client.dart';
 import 'package:abcdish/services/meal_service.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class CreatorUploadScreen extends ConsumerStatefulWidget {
   const CreatorUploadScreen({super.key, this.meal});
@@ -121,10 +122,16 @@ class _CreatorUploadScreenState extends ConsumerState<CreatorUploadScreen> {
       });
     } catch (error) {
       if (!mounted) return;
+      logUiError('Trailer picker failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${ref.read(appTextProvider).raw('Unable to choose trailer.')} $error',
+            userFriendlyErrorMessage(
+              error,
+              fallback: ref
+                  .read(appTextProvider)
+                  .raw('Unable to choose trailer.'),
+            ),
           ),
         ),
       );
@@ -158,10 +165,16 @@ class _CreatorUploadScreenState extends ConsumerState<CreatorUploadScreen> {
       if (await _redirectToLoginIfNeeded(error)) return;
       if (!mounted) return;
 
+      logUiError('Video upload and draft extraction failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${ref.read(appTextProvider).raw('Unable to upload and read video.')} $error',
+            userFriendlyErrorMessage(
+              error,
+              fallback: ref
+                  .read(appTextProvider)
+                  .raw('Unable to upload and read video.'),
+            ),
           ),
         ),
       );
@@ -207,10 +220,14 @@ class _CreatorUploadScreenState extends ConsumerState<CreatorUploadScreen> {
       if (await _redirectToLoginIfNeeded(error)) return;
       if (!mounted) return;
 
+      logUiError('Draft extraction failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${ref.read(appTextProvider).raw('Unable to create draft')}: $error',
+            userFriendlyErrorMessage(
+              error,
+              fallback: ref.read(appTextProvider).raw('Unable to create draft'),
+            ),
           ),
         ),
       );
@@ -351,10 +368,16 @@ class _CreatorUploadScreenState extends ConsumerState<CreatorUploadScreen> {
       if (await _redirectToLoginIfNeeded(error)) return;
       if (!mounted) return;
 
+      logUiError('Recipe publish failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${ref.read(appTextProvider).raw('Unable to publish recipe')}: $error',
+            userFriendlyErrorMessage(
+              error,
+              fallback: ref
+                  .read(appTextProvider)
+                  .raw('Unable to publish recipe'),
+            ),
           ),
         ),
       );

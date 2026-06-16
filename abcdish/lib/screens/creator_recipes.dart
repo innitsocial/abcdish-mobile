@@ -7,6 +7,7 @@ import 'package:abcdish/providers/meals_provider.dart';
 import 'package:abcdish/screens/creator_upload.dart';
 import 'package:abcdish/services/meal_service.dart';
 import 'package:abcdish/utils/auth_navigation.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class CreatorRecipesScreen extends ConsumerWidget {
   const CreatorRecipesScreen({super.key});
@@ -81,10 +82,16 @@ class CreatorRecipesScreen extends ConsumerWidget {
       final handled = await redirectToLoginForAuthError(context, ref, error);
       if (handled || !context.mounted) return;
 
+      logUiError('Recipe delete failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${ref.read(appTextProvider).raw('Unable to remove recipe')}: $error',
+            userFriendlyErrorMessage(
+              error,
+              fallback: ref
+                  .read(appTextProvider)
+                  .raw('Unable to remove recipe'),
+            ),
           ),
         ),
       );

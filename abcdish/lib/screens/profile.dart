@@ -10,6 +10,7 @@ import 'package:abcdish/screens/login.dart';
 import 'package:abcdish/screens/partner_stores.dart';
 import 'package:abcdish/screens/register.dart';
 import 'package:abcdish/utils/app_snack_bar.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -106,49 +107,47 @@ class ProfileScreen extends ConsumerWidget {
 
     return sessionAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          const Icon(Icons.error_outline, size: 60),
-          const SizedBox(height: 16),
-          Text(
-            text.raw('Could not load profile'),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+      error: (error, stackTrace) {
+        logUiError('Profile load failed', error, stackTrace);
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            const Icon(Icons.error_outline, size: 60),
+            const SizedBox(height: 16),
+            Text(
+              text.raw('Could not load profile'),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                fontWeight: FontWeight.bold,
+                color: colorScheme.onSurface,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            text.raw(
-              'Please try again. If this keeps happening, logout and sign in again.',
+            const SizedBox(height: 8),
+            Text(
+              userFriendlyErrorMessage(
+                error,
+                fallback: text.raw(
+                  'Please try again. If this keeps happening, logout and sign in again.',
+                ),
+              ),
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
             ),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$error',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodySmall!.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => ref.invalidate(appSessionProvider),
+              icon: const Icon(Icons.refresh),
+              label: Text(text.raw('Try again')),
             ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () => ref.invalidate(appSessionProvider),
-            icon: const Icon(Icons.refresh),
-            label: Text(text.raw('Try again')),
-          ),
-          const SizedBox(height: 10),
-          FilledButton.icon(
-            onPressed: () => _logout(context, ref),
-            icon: const Icon(Icons.logout),
-            label: Text(text.raw('Logout')),
-          ),
-        ],
-      ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: () => _logout(context, ref),
+              icon: const Icon(Icons.logout),
+              label: Text(text.raw('Logout')),
+            ),
+          ],
+        );
+      },
       data: (session) {
         if (session == null) {
           return _LoggedOutProfile(

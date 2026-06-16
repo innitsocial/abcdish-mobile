@@ -19,6 +19,7 @@ import 'package:abcdish/services/safety_service.dart';
 import 'package:abcdish/services/social_service.dart';
 import 'package:abcdish/services/story_service.dart';
 import 'package:abcdish/utils/auth_navigation.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class FoodFeedScreen extends ConsumerStatefulWidget {
   const FoodFeedScreen({super.key});
@@ -391,9 +392,17 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
       final handled = await redirectToLoginForAuthError(context, ref, error);
       if (handled || !mounted) return false;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Unable to remove story. $error')));
+      logUiError('Story delete failed', error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userFriendlyErrorMessage(
+              error,
+              fallback: 'Unable to remove story. Please try again.',
+            ),
+          ),
+        ),
+      );
       return false;
     }
   }
@@ -447,8 +456,16 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
     final handled = await redirectToLoginForAuthError(context, ref, error);
     if (handled || !mounted) return;
 
+    logUiError('Feed social action failed', error);
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Could not complete this action. $error')),
+      SnackBar(
+        content: Text(
+          userFriendlyErrorMessage(
+            error,
+            fallback: 'Could not complete this action. Please try again.',
+          ),
+        ),
+      ),
     );
   }
 
@@ -459,11 +476,17 @@ class _FoodFeedScreenState extends ConsumerState<FoodFeedScreen> {
 
     return feedAsync.when(
       loading: () => const _FeedLoadingSkeleton(),
-      error: (error, stackTrace) => _FeedMessage(
-        title: 'Unable to load feed',
-        message: '$error',
-        onRetry: () => ref.invalidate(feedProvider),
-      ),
+      error: (error, stackTrace) {
+        logUiError('Feed load failed', error, stackTrace);
+        return _FeedMessage(
+          title: 'Unable to load feed',
+          message: userFriendlyErrorMessage(
+            error,
+            fallback: 'The cooking feed is not available right now.',
+          ),
+          onRetry: () => ref.invalidate(feedProvider),
+        );
+      },
       data: (meals) {
         final visibleMeals = meals
             .where((meal) => !_hiddenCreatorKeys.contains(meal.creatorKey))
@@ -686,8 +709,16 @@ class _UserStoryViewerState extends State<_UserStoryViewer> {
     } catch (error) {
       _replaceStory(current);
       if (!mounted) return;
+      logUiError('Story like update failed', error);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not update story like. $error')),
+        SnackBar(
+          content: Text(
+            userFriendlyErrorMessage(
+              error,
+              fallback: 'Could not update story like. Please try again.',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -1035,7 +1066,12 @@ class _StoryViewersSheet extends StatelessWidget {
                 else if (snapshot.hasError)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Text('Could not load viewers. ${snapshot.error}'),
+                    child: Text(
+                      userFriendlyErrorMessage(
+                        snapshot.error!,
+                        fallback: 'Could not load viewers. Please try again.',
+                      ),
+                    ),
                   )
                 else if (viewers.isEmpty)
                   const Padding(
@@ -1963,9 +1999,17 @@ class _CommentsSheetState extends State<_CommentsSheet> {
         await widget.onAuthRequired();
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not add comment. $error')));
+      logUiError('Comment submit failed', error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            userFriendlyErrorMessage(
+              error,
+              fallback: 'Could not add comment. Please try again.',
+            ),
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {

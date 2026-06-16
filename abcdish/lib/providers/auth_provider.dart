@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 
 import 'package:abcdish/services/auth_service.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 const Object _unset = Object();
 
@@ -69,7 +70,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return true;
     } catch (error) {
       debugPrint('Register email OTP request error: $error');
-      state = state.copyWith(isLoading: false, errorMessage: error.toString());
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFriendlyErrorMessage(
+          error,
+          fallback: 'Could not send the OTP. Please try again.',
+        ),
+      );
       return false;
     }
   }
@@ -93,7 +100,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoggedIn: false,
         isLoading: false,
-        errorMessage: error.toString(),
+        errorMessage: userFriendlyErrorMessage(
+          error,
+          fallback: 'Could not verify the OTP. Please try again.',
+        ),
       );
       return false;
     }
@@ -107,7 +117,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(isLoading: false, errorMessage: null);
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: error.toString());
+      debugPrint('Email OTP request error: $error');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFriendlyErrorMessage(
+          error,
+          fallback: 'Could not send the OTP. Please try again.',
+        ),
+      );
       return false;
     }
   }
@@ -130,7 +147,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = state.copyWith(
         isLoggedIn: false,
         isLoading: false,
-        errorMessage: error.toString(),
+        errorMessage: userFriendlyErrorMessage(
+          error,
+          fallback: 'Could not verify the OTP. Please try again.',
+        ),
       );
       return false;
     }
@@ -161,7 +181,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, errorMessage: error.toString());
+      debugPrint('Delete account error: $error');
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: userFriendlyErrorMessage(
+          error,
+          fallback: 'Could not delete the account. Please try again.',
+        ),
+      );
       return false;
     }
   }

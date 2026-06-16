@@ -11,6 +11,7 @@ import 'package:abcdish/screens/create_story.dart';
 import 'package:abcdish/services/contest_service.dart';
 import 'package:abcdish/utils/app_snack_bar.dart';
 import 'package:abcdish/utils/auth_navigation.dart';
+import 'package:abcdish/utils/error_messages.dart';
 
 class ContestsScreen extends ConsumerWidget {
   const ContestsScreen({super.key});
@@ -22,12 +23,18 @@ class ContestsScreen extends ConsumerWidget {
 
     return contestsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => _ContestEmpty(
-        title: text.raw('Unable to load contests'),
-        message: '$error',
-        refreshLabel: text.raw('Refresh'),
-        onRetry: () => ref.invalidate(contestsProvider),
-      ),
+      error: (error, stackTrace) {
+        logUiError('Contests load failed', error, stackTrace);
+        return _ContestEmpty(
+          title: text.raw('Unable to load contests'),
+          message: userFriendlyErrorMessage(
+            error,
+            fallback: 'Cooking contests are not available right now.',
+          ),
+          refreshLabel: text.raw('Refresh'),
+          onRetry: () => ref.invalidate(contestsProvider),
+        );
+      },
       data: (contests) {
         if (contests.isEmpty) {
           return _ContestEmpty(
@@ -127,7 +134,15 @@ class _ContestEntries extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Center(child: CircularProgressIndicator()),
       ),
-      error: (error, stackTrace) => Text('Could not load entries: $error'),
+      error: (error, stackTrace) {
+        logUiError('Contest entries load failed', error, stackTrace);
+        return Text(
+          userFriendlyErrorMessage(
+            error,
+            fallback: 'Could not load entries. Please try again.',
+          ),
+        );
+      },
       data: (entries) {
         if (entries.isEmpty) {
           return Text(
@@ -173,9 +188,15 @@ class _ContestEntryTile extends ConsumerWidget {
       final handled = await redirectToLoginForAuthError(context, ref, error);
       if (handled || !context.mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(errorSnackBar('Could not update vote. $error'));
+      logUiError('Contest vote update failed', error);
+      ScaffoldMessenger.of(context).showSnackBar(
+        errorSnackBar(
+          userFriendlyErrorMessage(
+            error,
+            fallback: 'Could not update vote. Please try again.',
+          ),
+        ),
+      );
     }
   }
 

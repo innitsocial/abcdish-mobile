@@ -6,6 +6,7 @@ import 'package:abcdish/models/category.dart';
 import 'package:abcdish/models/meal.dart';
 import 'package:abcdish/providers/categories_provider.dart';
 import 'package:abcdish/screens/meal_details.dart';
+import 'package:abcdish/utils/error_messages.dart';
 import 'package:abcdish/widgets/meal_horizontal_card.dart';
 import 'package:abcdish/widgets/section_header.dart';
 
@@ -27,9 +28,22 @@ class HomeScreen extends ConsumerWidget {
 
     return categoriesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stackTrace) => Center(
-        child: Text('${text.raw('Failed to load categories')}: $error'),
-      ),
+      error: (error, stackTrace) {
+        logUiError('Home categories failed', error, stackTrace);
+        return Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              userFriendlyErrorMessage(
+                error,
+                fallback:
+                    '${text.raw('Failed to load categories')}. ${text.raw('Please try again.')}',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        );
+      },
       data: (categories) {
         if (availableMeals.isEmpty) {
           return Center(
